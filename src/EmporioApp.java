@@ -57,9 +57,13 @@ import javax.swing.JDesktopPane;
 import javax.swing.JMenuItem;
 import javax.swing.ImageIcon;
 
-
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+
 import javax.swing.JCheckBox;
 import java.awt.Button;
 
@@ -179,8 +183,13 @@ public class EmporioApp {
 	private JTextField textFieldListarTamano;
 	private JTextField textFieldListarGas;
 	private JCheckBox chckbxListarEnStock;
+	private JCheckBox chckbxListarPruebaHidrulica;
 	
 	private JInternalFrame internalFrameListarTubos;
+	private JComboBox comboBoxListarEstado;
+	private JComboBox comboBoxListarPropietario;
+	private JComboBox comboBoxListarUbicacion;
+
 
 	public EmporioApp() {
 		initialize();
@@ -458,6 +467,8 @@ public class EmporioApp {
 		//----------------------------internal frames definitions--------------------------------------
 
 		internalFrameListarTubos = new JInternalFrame("Buscar tubos");
+		internalFrameListarTubos.setResizable(true);
+		internalFrameListarTubos.setClosable(true);
 		internalFrameListarTubos.setBounds(6, 10, 600, 600);
 		frame.getContentPane().add(internalFrameListarTubos);
 		internalFrameListarTubos.getContentPane().setLayout(null);
@@ -476,21 +487,21 @@ public class EmporioApp {
 		chckbxListarEnStock.setBounds(25, 21, 128, 23);
 		internalFrameListarTubos.getContentPane().add(chckbxListarEnStock);
 		
-		JComboBox comboBoxListarEstado = new JComboBox();
+		comboBoxListarEstado = new JComboBox();
 		comboBoxListarEstado.setModel(new DefaultComboBoxModel(new String[] {"Todos", "Llenos", "A llenar"}));
 		comboBoxListarEstado.setBounds(23, 75, 143, 27);
 		internalFrameListarTubos.getContentPane().add(comboBoxListarEstado);
 		
-		JCheckBox chckbxListarPruebaHidrulica = new JCheckBox("Prueba hidráulica");
+		chckbxListarPruebaHidrulica = new JCheckBox("Prueba hidráulica");
 		chckbxListarPruebaHidrulica.setBounds(198, 21, 176, 23);
 		internalFrameListarTubos.getContentPane().add(chckbxListarPruebaHidrulica);
 		
-		JComboBox comboBoxListarPropietario = new JComboBox();
+		comboBoxListarPropietario = new JComboBox();
 		comboBoxListarPropietario.setModel(new DefaultComboBoxModel(new String[] {"Todos", "Z", "P"}));
 		comboBoxListarPropietario.setBounds(198, 75, 135, 27);
 		internalFrameListarTubos.getContentPane().add(comboBoxListarPropietario);
 		
-		JComboBox comboBoxListarUbicacion = new JComboBox();
+		comboBoxListarUbicacion = new JComboBox();
 		comboBoxListarUbicacion.setModel(new DefaultComboBoxModel(new String[] {"Todas", "Tandil", "Olavarría", "Colectivo"}));
 		comboBoxListarUbicacion.setBounds(368, 75, 160, 27);
 		internalFrameListarTubos.getContentPane().add(comboBoxListarUbicacion);
@@ -528,19 +539,67 @@ public class EmporioApp {
 		JButton buttonListarBuscar = new JButton("Buscar");
 		buttonListarBuscar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				String ph = "";
 				String lleno = "";
 				String propietario = "";
 				String gas = "";
 				String tamano = "";
+				String ubicacion = "";
 				String stock = "";
-				if(textFieldListarGas.getText().equals(""))
-					gas = "tipo_gas=" + textFieldListarGas.getText();
-				if(textFieldListarTamano.getText().equals(""))
-					tamano = "tamanio=" + textFieldListarTamano.getText();
-				if(chckbxListarEnStock.isSelected())
-					stock = "nro_tubo= (SELECT nro_tubo FROM salidas WHERE fecha_devolucion IS NOT NULL)";
+				List<String> list = new ArrayList<String>();
+				
+				if (chckbxListarPruebaHidrulica.isSelected()){
+				//	ph = 
+				}
+				
+				if (!comboBoxListarEstado.getSelectedItem().equals("Todos")){
+					switch (comboBoxListarEstado.getSelectedItem().toString()){
+					case "Lleno" : lleno = "lleno= si"; break;
+					case "A llenar" : lleno = "lleno = no"; break;
+				}
+					list.add(lleno);
+				}
+				
+				if (!comboBoxListarPropietario.getSelectedItem().equals("Todos")){
+					propietario = "propietario= '" + comboBoxListarPropietario.getSelectedItem().toString() + "'";
+					list.add(propietario);
+				}
+				
+				
+				
+				if (!comboBoxListarUbicacion.getSelectedItem().equals("Todas")){
+					ubicacion = "ubicacion= '" + comboBoxListarUbicacion.getSelectedItem() + "'";
+
+					list.add(ubicacion);
+				}
+				
+				if(!textFieldListarGas.getText().equals("")){
+					gas = "tipo_gas= '" + textFieldListarGas.getText() + "'";
+					list.add(gas);
+				}
+				
+				if(!textFieldListarTamano.getText().equals("")){
+					tamano = "tamanio= '" + textFieldListarTamano.getText() + "'";
+					list.add(tamano);
+				}
 					
-				String query = "SELECT * FROM tubos WHERE "+ stock + ";";
+				
+				if(chckbxListarEnStock.isSelected()){
+					stock = "nro_tubo= (SELECT nro_tubo FROM salidas WHERE fecha_devolucion IS NOT NULL)";
+					list.add(stock);
+				}
+				
+				String subq = "";
+				if (list.size() != 0)
+				{
+					subq = list.get(0);
+					for (int i=1; i < list.size(); i++)
+						subq = subq + " AND " + list.get(i);
+					}
+				
+				
+					
+				String query = "SELECT * FROM tubos WHERE "+ subq + ";";
 				PreparedStatement pst;
 				try {
 					pst = connection.prepareStatement(query);
@@ -589,6 +648,7 @@ public class EmporioApp {
 		});
 
 		internalFrameInfoTubo = new JInternalFrame("Ver información de tubo");
+		internalFrameInfoTubo.setClosable(true);
 		internalFrameInfoTubo.setResizable(true);
 		internalFrameInfoTubo.setMaximizable(true);
 		internalFrameInfoTubo.setBounds(10, 6, 623, 623);
