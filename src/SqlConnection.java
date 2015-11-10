@@ -6,6 +6,7 @@ public class SqlConnection {
 	
 	static final String JDBC_DRIVER = "org.sqlite.JDBC";  
 	   static final String DB_URL = "jdbc:sqlite:/Users/cristianmerlo/zamolo/database.db";
+	  // static final String DB_URL = "jdbc:sqlite:./database.db";
 	   
 	//  Database credentials
 	   //static final String USER = "username";

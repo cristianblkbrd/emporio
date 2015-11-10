@@ -7,6 +7,7 @@ import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
 import net.proteanit.sql.DbUtils;
+import workers.LoginWorker;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -26,6 +27,7 @@ import java.awt.event.ActionEvent;
 
 import java.sql.*;
 import java.util.Timer;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -189,6 +191,7 @@ public class EmporioApp {
 	private JComboBox comboBoxListarEstado;
 	private JComboBox comboBoxListarPropietario;
 	private JComboBox comboBoxListarUbicacion;
+	private JComboBox comboBoxNuevoTubo;
 
 
 	public EmporioApp() {
@@ -350,24 +353,30 @@ public class EmporioApp {
 		JMenuItem mntmBuscar = new JMenuItem("Ver información de tubo");
 		mntmBuscar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//updateTableEntradas();
-				internalFrameInfoTubo.setVisible(true);
-				internalFrameInfoTubo.setFocusable(true);
-			}
-		});
-
-		JMenuItem mntmNuevo = new JMenuItem("Nuevo/Modificar tubo");
-		mntmNuevo.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				internalFrameInfoTubo.setFocusable(false);
-				internalFrameNuevoTubo.setVisible(true);
-				internalFrameNuevoTubo.setFocusable(true);
 				try {
-					internalFrameNuevoTubo.setSelected(true);
+					internalFrameInfoTubo.setClosed(false);
 				} catch (PropertyVetoException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
+				internalFrameInfoTubo.setVisible(true);
+				internalFrameInfoTubo.toFront();
+			}
+		});
+
+		JMenuItem mntmNuevo = new JMenuItem("Nuevo/Modificar tubo");
+		
+		mntmNuevo.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					internalFrameNuevoTubo.setClosed(false);
+				} catch (PropertyVetoException e2) {
+					// TODO Auto-generated catch block
+					e2.printStackTrace();
+				}
+				internalFrameNuevoTubo.setVisible(true);
+				internalFrameNuevoTubo.toFront();
+					
 			}
 		});
 		mnTubos.add(mntmNuevo);
@@ -378,7 +387,14 @@ public class EmporioApp {
 		mntmNuevaEntrada = new JMenuItem("Nueva entrada");
 		mntmNuevaEntrada.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				try {
+					InternalFrameNuevaEntrada.setClosed(false);
+				} catch (PropertyVetoException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 				InternalFrameNuevaEntrada.setVisible(true);
+				InternalFrameNuevaEntrada.toFront();
 			}
 		});
 		mnMovimientos.add(mntmNuevaEntrada);
@@ -386,7 +402,14 @@ public class EmporioApp {
 		mntmNuevaSalida = new JMenuItem("Nueva salida");
 		mntmNuevaSalida.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				try {
+					internalFrameNuevaSalida.setClosed(false);
+				} catch (PropertyVetoException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 				internalFrameNuevaSalida.setVisible(true);
+				internalFrameNuevaSalida.toFront();
 			}
 		});
 		mnMovimientos.add(mntmNuevaSalida);
@@ -397,7 +420,14 @@ public class EmporioApp {
 		JMenuItem mntmNuevoAcondicionamiento = new JMenuItem("Nuevo acondicionamiento");
 		mntmNuevoAcondicionamiento.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				try {
+					internalFrameNuevoAcond.setClosed(false);
+				} catch (PropertyVetoException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 				internalFrameNuevoAcond.setVisible(true);
+				internalFrameNuevoAcond.toFront();
 			}
 		});
 		mnTubos.add(mntmNuevoAcondicionamiento);
@@ -408,7 +438,14 @@ public class EmporioApp {
 				JMenuItem mntmListar = new JMenuItem("Ver tubos");
 				mntmListar.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
+						try {
+							internalFrameListarTubos.setClosed(false);
+						} catch (PropertyVetoException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
 						internalFrameListarTubos.setVisible(true);
+						internalFrameListarTubos.toFront();
 					}
 				});
 				mnTubos.add(mntmListar);
@@ -467,9 +504,15 @@ public class EmporioApp {
 		//----------------------------internal frames definitions--------------------------------------
 
 		internalFrameListarTubos = new JInternalFrame("Buscar tubos");
+		try {
+			internalFrameListarTubos.setClosed(true);
+		} catch (PropertyVetoException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
 		internalFrameListarTubos.setResizable(true);
 		internalFrameListarTubos.setClosable(true);
-		internalFrameListarTubos.setBounds(6, 10, 600, 600);
+		internalFrameListarTubos.setBounds(10, 0, 600, 600);
 		frame.getContentPane().add(internalFrameListarTubos);
 		internalFrameListarTubos.getContentPane().setLayout(null);
 		
@@ -590,16 +633,16 @@ public class EmporioApp {
 				}
 				
 				String subq = "";
+				String query = "";
 				if (list.size() != 0)
 				{
 					subq = list.get(0);
 					for (int i=1; i < list.size(); i++)
 						subq = subq + " AND " + list.get(i);
+					query = "SELECT * FROM tubos WHERE "+ subq + ";";
 					}
+				else query = "SELECT * FROM tubos;";
 				
-				
-					
-				String query = "SELECT * FROM tubos WHERE "+ subq + ";";
 				PreparedStatement pst;
 				try {
 					pst = connection.prepareStatement(query);
@@ -648,6 +691,12 @@ public class EmporioApp {
 		});
 
 		internalFrameInfoTubo = new JInternalFrame("Ver información de tubo");
+		try {
+			internalFrameInfoTubo.setClosed(true);
+		} catch (PropertyVetoException e3) {
+			// TODO Auto-generated catch block
+			e3.printStackTrace();
+		}
 		internalFrameInfoTubo.setClosable(true);
 		internalFrameInfoTubo.setResizable(true);
 		internalFrameInfoTubo.setMaximizable(true);
@@ -656,12 +705,24 @@ public class EmporioApp {
 		internalFrameInfoTubo.getContentPane().setLayout(null);
 
 		internalFrameLogin = new JInternalFrame("Login");
+		try {
+			internalFrameLogin.setClosed(true);
+		} catch (PropertyVetoException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
 		internalFrameLogin.setBounds(53, 6, 493, 300);
 		frame.getContentPane().add(internalFrameLogin);
 		internalFrameLogin.getContentPane().setLayout(null);
 		internalFrameLogin.setVisible(true);
 
 		internalFrameClientes = new JInternalFrame("Nuevo Cliente");
+		try {
+			internalFrameClientes.setClosed(true);
+		} catch (PropertyVetoException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
 		internalFrameClientes.setEnabled(false);
 		internalFrameClientes.setResizable(true);
 		internalFrameClientes.setMaximizable(true);
@@ -670,17 +731,35 @@ public class EmporioApp {
 		internalFrameClientes.getContentPane().setLayout(null);
 
 		internalFrameNuevoAcond = new JInternalFrame("Nuevo acondicionamiento");
+		try {
+			internalFrameNuevoAcond.setClosed(true);
+		} catch (PropertyVetoException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
 		internalFrameNuevoAcond.setBounds(10, 6, 450, 450);
 		frame.getContentPane().add(internalFrameNuevoAcond);
 		internalFrameNuevoAcond.getContentPane().setLayout(null);
 
 		internalFrameNuevaSalida = new JInternalFrame("Nueva Salida");
+		try {
+			internalFrameNuevaSalida.setClosed(true);
+		} catch (PropertyVetoException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
 		internalFrameNuevaSalida.setResizable(true);
 		internalFrameNuevaSalida.setBounds(10, 6, 623, 450);
 		frame.getContentPane().add(internalFrameNuevaSalida);
 		internalFrameNuevaSalida.getContentPane().setLayout(null);
 
 		InternalFrameNuevaEntrada = new JInternalFrame("Nueva entrada");
+		try {
+			InternalFrameNuevaEntrada.setClosed(true);
+		} catch (PropertyVetoException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
 		InternalFrameNuevaEntrada.setEnabled(false);
 		InternalFrameNuevaEntrada.setResizable(true);
 		InternalFrameNuevaEntrada.setMaximizable(true);
@@ -689,6 +768,12 @@ public class EmporioApp {
 		InternalFrameNuevaEntrada.getContentPane().setLayout(null);
 
 		internalFrameNuevoTubo = new JInternalFrame("Nuevo/modificar tubo");
+		try {
+			internalFrameNuevoTubo.setClosed(true);
+		} catch (PropertyVetoException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
 		internalFrameNuevoTubo.setMaximizable(true);
 		internalFrameNuevoTubo.setResizable(true);
 		internalFrameNuevoTubo.setEnabled(false);
@@ -720,35 +805,33 @@ public class EmporioApp {
 		JButton btnOk = new JButton("OK");
 		btnOk.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String query = "SELECT * FROM usuarios WHERE id_usuario=? AND clave=?;";
+				String user = textFieldUsuario.getText();
+				String pass = textFieldContrasena.getText();
 				try {
-					PreparedStatement pst = connection.prepareStatement(query);
-					pst.setString(1, textFieldUsuario.getText());
-					pst.setString(2, textFieldContrasena.getText());
-
-					ResultSet rs = pst.executeQuery();
-
-					if (!rs.isBeforeFirst() ) {    
-						JOptionPane.showMessageDialog(null, "El usuario y/o contraseña son incorrectos, por favor intenta nuevamente"); 
-					} else
-
-					{
-						internalFrameLogin.setVisible(false);
-						usuario = rs.getString("id_usuario");
-						tipoUsuario = rs.getString("tipo");
-						menuBar.setEnabled(true);
-						mnClientes.setEnabled(true);
-						mnNotificaciones.setEnabled(true);
-						mnTubos.setEnabled(true);
-						mnUsuarios.setEnabled(true);
-					}
-
-
-				} catch (SQLException e1) {
+				LoginWorker loginWorker = new LoginWorker(connection, user, pass);
+				loginWorker.execute();
+				Boolean ok = loginWorker.get();
+				
+				if (!ok)
+					JOptionPane.showMessageDialog(null, "El usuario y/o contraseña son incorrectos, por favor intenta nuevamente"); 
+				else
+				{
+					internalFrameLogin.dispose();
+					tipoUsuario = loginWorker.getTipo();
+					usuario = loginWorker.getUsuario();
+					menuBar.setEnabled(true);
+					mnClientes.setEnabled(true);
+					mnNotificaciones.setEnabled(true);
+					mnTubos.setEnabled(true);
+					mnUsuarios.setEnabled(true);
+				}
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (ExecutionException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-
 			}
 		});
 		btnOk.setBounds(190, 166, 117, 29);
@@ -787,9 +870,9 @@ public class EmporioApp {
 		btnAceptar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				try {
-					String query = "INSERT INTO salidas (id_acondicionamiento, fecha, nro_tubo, tipo) VALUES (?,?,?,?);";
+					String query = "INSERT INTO acondicionamientos (id_acond, fecha, nro_tubo, tipo) VALUES (?,?,?,?);";
 					PreparedStatement pst = connection.prepareStatement(query);
-					int row = getRow("acondicionamiento") + 1;
+					int row = getRow("acondicionamientos") + 1;
 					pst.setString(1, String.valueOf(row) );
 					pst.setString(2, textFieldAcondFecha.getText());
 					pst.setString(3, textFieldAcondTubo.getText());
@@ -937,7 +1020,8 @@ public class EmporioApp {
 		JButton btnCancelar_2 = new JButton("Cancelar");
 		btnCancelar_2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				internalFrameNuevaSalida.setVisible(false);
+				//internalFrameNuevaSalida.setVisible(false);
+				internalFrameNuevaSalida.dispose();
 			}
 		});
 		btnCancelar_2.setBounds(417, 64, 117, 29);
@@ -1222,6 +1306,12 @@ public class EmporioApp {
 		InternalFrameNuevaEntrada.getContentPane().add(btnAgregar);
 
 		JButton btnCancelar_1 = new JButton("Cancelar");
+		btnCancelar_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				InternalFrameNuevaEntrada.dispose();
+			}
+		});
+
 		btnCancelar_1.setBounds(327, 64, 117, 29);
 		InternalFrameNuevaEntrada.getContentPane().add(btnCancelar_1);
 
@@ -1266,10 +1356,12 @@ public class EmporioApp {
 		lblNewLabel_4.setBounds(17, 185, 109, 16);
 		internalFrameNuevoTubo.getContentPane().add(lblNewLabel_4);
 
-		textFieldUbicacion = new JTextField();
-		textFieldUbicacion.setBounds(145, 173, 134, 28);
-		internalFrameNuevoTubo.getContentPane().add(textFieldUbicacion);
-		textFieldUbicacion.setColumns(10);
+		comboBoxNuevoTubo = new JComboBox();
+		comboBoxNuevoTubo.setModel(new DefaultComboBoxModel(new String[] {"Tandil", "Olavarría", "Colectivo"}));
+		//textFieldUbicacion = new JTextField();
+		comboBoxNuevoTubo.setBounds(145, 173, 134, 28);
+		internalFrameNuevoTubo.getContentPane().add(comboBoxNuevoTubo);
+		//comboBoxNuevoTubo.setColumns(10);
 
 		JButton btnAgregarTubo = new JButton("");
 		btnAgregarTubo.setIcon(new ImageIcon("/Users/cristianmerlo/Downloads/Ok.png"));
@@ -1298,9 +1390,9 @@ public class EmporioApp {
 							PreparedStatement pst = connection.prepareStatement(query);
 
 							pst.execute();
-							//pst.close();		
-							internalFrameNuevoTubo.setVisible(false);
-							clearDataNuevoTubo();
+							pst.close();		
+							internalFrameNuevoTubo.dispose();
+							//clearDataNuevoTubo();
 
 						} catch (Exception e1) {
 							// TODO Auto-generated catch block
@@ -1334,8 +1426,8 @@ public class EmporioApp {
 					}
 					//internalFrameNuevoTubo.dispose();
 					//internalFrameNuevoTubo.setVisible(false);
-					clearDataNuevoTubo();
-					internalFrameNuevoTubo.setVisible(false);
+					//clearDataNuevoTubo();
+					internalFrameNuevoTubo.dispose();
 					//updateTableTubos();
 				}
 			}
