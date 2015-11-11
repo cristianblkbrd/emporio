@@ -1,6 +1,7 @@
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 import javax.swing.SwingConstants;
@@ -184,6 +185,8 @@ public class EmporioApp {
 	private JScrollPane scrollPane_1;
 	private JTextField textFieldListarTamano;
 	private JTextField textFieldListarGas;
+	private JCheckBox chckbxListarEnStock;
+	private JCheckBox chckbxListarPruebaHidrulica;
 	
 	private JInternalFrame internalFrameListarTubos;
 	private JComboBox comboBoxListarEstado;
@@ -193,26 +196,7 @@ public class EmporioApp {
 	private JComboBox comboBoxListarUbicacion;
 	private JLabel lblNmeroAlternativo;
 	private JTextField textFieldNroAltern;
-	private JTextPane textPaneAcondObservaciones;
-private JInternalFrame internalFrameVerMov;
-private JLabel lblFecha_2;
-private JTextField textFieldMovFecha;
-private JTextField textFieldMovEmpleado;
-private JLabel lblEmpleado_2;
-private JLabel lblMotivo_1;
-private JComboBox comboBoxMovMotivo;
-private JLabel lblFlete_2;
-private JComboBox comboBoxMovFlete;
-private JLabel lblNroTubo_1;
-private JTextField textFieldMovTubo;
-private JLabel lblCliente_2;
-private JComboBox comboBoxMovCliente;
-private JTable tableMovMov;
-private JScrollPane scrollPane_2;
-private JButton btnBuscar_1;
-private JComboBox comboBoxMovTipo;
-private JLabel lblTipo;
-	
+
 
 	public EmporioApp() {
 		initialize();
@@ -351,7 +335,10 @@ private JLabel lblTipo;
 		runNotification();
 
 		frame = new JFrame();
-		frame.setBounds(100, 100, 785, 643);
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		int width = (int) (screenSize.getWidth()*0.8);
+		int height = (int) (screenSize.getHeight()*0.8);
+		frame.setBounds(50, 50, width, height);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 
@@ -436,12 +423,6 @@ private JLabel lblTipo;
 		mnMovimientos.add(mntmNuevaSalida);
 
 		mntmVerMovimientos = new JMenuItem("Ver movimientos");
-		mntmVerMovimientos.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				internalFrameVerMov.setVisible(true);
-				internalFrameVerMov.toFront();
-			}
-		});
 		mnMovimientos.add(mntmVerMovimientos);
 
 		JMenuItem mntmNuevoAcondicionamiento = new JMenuItem("Nuevo acondicionamiento");
@@ -529,191 +510,24 @@ private JLabel lblTipo;
 
 
 		//----------------------------internal frames definitions--------------------------------------
-	
-		internalFrameVerMov = new JInternalFrame("Ver movimientos");
-		internalFrameVerMov.setResizable(true);
-		internalFrameVerMov.setClosable(true);
+		
+		internalFrameNuevoTubo = new JInternalFrame("Nuevo/modificar tubo");
 		try {
-			internalFrameVerMov.setClosed(true);
+			internalFrameNuevoTubo.setClosed(true);
 		} catch (PropertyVetoException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
 		}
-		internalFrameVerMov.setBounds(10, 6, 663, 461);
-		frame.getContentPane().add(internalFrameVerMov);
-		internalFrameVerMov.getContentPane().setLayout(null);
-		
-		lblFecha_2 = new JLabel("Fecha");
-		lblFecha_2.setBounds(33, 66, 61, 16);
-		internalFrameVerMov.getContentPane().add(lblFecha_2);
-		
-		textFieldMovFecha = new JTextField();
-		textFieldMovFecha.setBounds(107, 61, 130, 26);
-		internalFrameVerMov.getContentPane().add(textFieldMovFecha);
-		textFieldMovFecha.setColumns(10);
-		
-		textFieldMovEmpleado = new JTextField();
-		textFieldMovEmpleado.setBounds(349, 30, 130, 26);
-		internalFrameVerMov.getContentPane().add(textFieldMovEmpleado);
-		textFieldMovEmpleado.setColumns(10);
-		
-		lblEmpleado_2 = new JLabel("Empleado");
-		lblEmpleado_2.setBounds(276, 35, 61, 16);
-		internalFrameVerMov.getContentPane().add(lblEmpleado_2);
-		
-		lblMotivo_1 = new JLabel("Motivo");
-		lblMotivo_1.setBounds(33, 100, 61, 16);
-		internalFrameVerMov.getContentPane().add(lblMotivo_1);
-		
-		comboBoxMovMotivo = new JComboBox();
-		comboBoxMovMotivo.setModel(new DefaultComboBoxModel(new String[] {"Todos"}));
-		comboBoxMovMotivo.setBounds(107, 96, 130, 27);
-		internalFrameVerMov.getContentPane().add(comboBoxMovMotivo);
-		
-		lblFlete_2 = new JLabel("Flete");
-		lblFlete_2.setBounds(276, 66, 61, 16);
-		internalFrameVerMov.getContentPane().add(lblFlete_2);
-		
-		comboBoxMovFlete = new JComboBox();
-		comboBoxMovFlete.setModel(new DefaultComboBoxModel(new String[] {"Todos", "Si", "No"}));
-		comboBoxMovFlete.setBounds(349, 62, 130, 27);
-		internalFrameVerMov.getContentPane().add(comboBoxMovFlete);
-		
-		lblNroTubo_1 = new JLabel("Nro tubo");
-		lblNroTubo_1.setBounds(33, 140, 61, 16);
-		internalFrameVerMov.getContentPane().add(lblNroTubo_1);
-		
-		textFieldMovTubo = new JTextField();
-		textFieldMovTubo.setBounds(107, 135, 130, 26);
-		internalFrameVerMov.getContentPane().add(textFieldMovTubo);
-		textFieldMovTubo.setColumns(10);
-		
-		lblCliente_2 = new JLabel("Cliente");
-		lblCliente_2.setBounds(276, 100, 61, 16);
-		internalFrameVerMov.getContentPane().add(lblCliente_2);
-		
-		comboBoxMovCliente = new JComboBox();
-		comboBoxMovCliente.setModel(new DefaultComboBoxModel(new String[] {"Todos"}));
-		comboBoxMovCliente.setBounds(349, 96, 130, 27);
-		internalFrameVerMov.getContentPane().add(comboBoxMovCliente);
-		
-		scrollPane_2 = new JScrollPane();
-		scrollPane_2.setBounds(6, 165, 627, 244);
-		internalFrameVerMov.getContentPane().add(scrollPane_2);
-		
-		tableMovMov = new JTable();
-		scrollPane_2.setViewportView(tableMovMov);
-		
-		btnBuscar_1 = new JButton("Buscar");
-		btnBuscar_1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				
-				String empleado = "";
-				String fecha = "";
-				String flete = "";
-				String motivo = "";
-				String cliente = "";
-				String tubo = "";
-				String tabla = "";
-				List<String> list = new ArrayList<String>();
-				
-				
-				if(!textFieldMovEmpleado.getText().equals("")){
-					empleado = "empleado= '" + textFieldMovEmpleado.getText() + "'";
-					list.add(empleado);
-				}
-				
-				if(!textFieldMovFecha.getText().equals("")){
-					fecha = "fecha= '" + textFieldMovFecha.getText() + "'";
-					list.add(fecha);
-				}
-				
-				if(!comboBoxMovFlete.getSelectedItem().equals("Todos")){
-					flete = "flete= '"+ comboBoxMovFlete.getSelectedItem() + "'";
-					list.add(flete);
-				}
-				
-				if (!comboBoxMovMotivo.getSelectedItem().equals("Todos")){
-					motivo = "motivo= '" + comboBoxMovMotivo.getSelectedItem().toString() + "'";
-					list.add(motivo);
-				}
-				
-				if (!comboBoxMovCliente.getSelectedItem().equals("Todos")){
-					cliente = "cliente= '" + comboBoxMovCliente.getSelectedItem().toString() + "'";
-					list.add(cliente);
-				}
-				
-				if(!textFieldMovTubo.getText().equals("")){
-					tubo = "nro_tubo= '" + textFieldMovTubo.getText() + "'";
-					list.add(tubo);
-				}
-				
-				if(comboBoxMovTipo.getSelectedItem().equals("Entrada"))
-					tabla = "entradas";
-				else
-					tabla = "salidas";
-				
-				
-				String subq = "";
-				String query = "";
-				if (list.size() != 0)
-				{
-					subq = list.get(0);
-					for (int i=1; i < list.size(); i++)
-						subq = subq + " AND " + list.get(i);
-					query = "SELECT * FROM " + tabla + " WHERE "+ subq + ";";
-					}
-				else query = "SELECT * FROM " + tabla + ";";
-				
-				PreparedStatement pst;
-				try {
-					pst = connection.prepareStatement(query);
-				
-				ResultSet rs = pst.executeQuery();
-				tableMovMov.setModel(DbUtils.resultSetToTableModel(rs));
-				//tableListaTubos.set
-				/*TableColumnModel tcm = tableListaTubos.getColumnModel();
-				tcm.getColumn(0).setHeaderValue("Nro tubo");
-				tcm.getColumn(1).setHeaderValue("Gas");
-				tcm.getColumn(2).setHeaderValue("Tamaño");
-				tcm.getColumn(3).setHeaderValue("Propietario");
-				tcm.getColumn(4).setHeaderValue("Lleno");
-				tcm.getColumn(5).setHeaderValue("Ubicación");*/
-				pst.close();
-				} catch (SQLException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			}
-				
+		internalFrameNuevoTubo.setMaximizable(true);
+		internalFrameNuevoTubo.setResizable(true);
+		internalFrameNuevoTubo.setEnabled(false);
+		internalFrameNuevoTubo.setSize(663, 282);
+		int x = (int) ((frame.getWidth() - internalFrameNuevoTubo.getWidth())*0.4);
+		int y = (int) ((frame.getHeight() - internalFrameNuevoTubo.getHeight())*0.4);
+		internalFrameNuevoTubo.setLocation(x, y);
+		frame.getContentPane().add(internalFrameNuevoTubo);
+		internalFrameNuevoTubo.getContentPane().setLayout(null);
 
-		});
-		btnBuscar_1.setBounds(349, 135, 117, 29);
-		internalFrameVerMov.getContentPane().add(btnBuscar_1);
-		
-		comboBoxMovTipo = new JComboBox();
-		comboBoxMovTipo.setModel(new DefaultComboBoxModel(new String[] {"Entrada", "Salida"}));
-		comboBoxMovTipo.setBounds(107, 31, 130, 27);
-		internalFrameVerMov.getContentPane().add(comboBoxMovTipo);
-		
-		lblTipo = new JLabel("Tipo");
-		lblTipo.setBounds(34, 35, 61, 16);
-		internalFrameVerMov.getContentPane().add(lblTipo);
-		
-		
-		internalFrameNuevoAcond = new JInternalFrame("Nuevo acondicionamiento");
-		internalFrameNuevoAcond.setResizable(true);
-		internalFrameNuevoAcond.setClosable(true);
-		try {
-			internalFrameNuevoAcond.setClosed(true);
-		} catch (PropertyVetoException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-		internalFrameNuevoAcond.setBounds(10, 6, 450, 340);
-		frame.getContentPane().add(internalFrameNuevoAcond);
-		internalFrameNuevoAcond.getContentPane().setLayout(null);
-		
 		internalFrameListarTubos = new JInternalFrame("Buscar tubos");
 		try {
 			internalFrameListarTubos.setClosed(true);
@@ -723,12 +537,119 @@ private JLabel lblTipo;
 		}
 		internalFrameListarTubos.setResizable(true);
 		internalFrameListarTubos.setClosable(true);
-		internalFrameListarTubos.setBounds(10, 0, 663, 600);
+		internalFrameListarTubos.setSize(600, 600);
+		int x7 = (int) ((frame.getWidth() - internalFrameListarTubos.getWidth())*0.4);
+		int y7 = (int) ((frame.getHeight() - internalFrameListarTubos.getHeight())*0.4);
+		internalFrameListarTubos.setLocation(x7, y7);
+		
+		
+
+		internalFrameInfoTubo = new JInternalFrame("Ver información de tubo");
+		try {
+			internalFrameInfoTubo.setClosed(true);
+		} catch (PropertyVetoException e3) {
+			// TODO Auto-generated catch block
+			e3.printStackTrace();
+		}
+		internalFrameInfoTubo.setClosable(true);
+		internalFrameInfoTubo.setResizable(true);
+		internalFrameInfoTubo.setMaximizable(true);
+		internalFrameInfoTubo.setSize(623, 623);
+		int x6 = (int) ((frame.getWidth() - internalFrameInfoTubo.getWidth())*0.4);
+		int y6 = (int) ((frame.getHeight() - internalFrameInfoTubo.getHeight())*0.4);
+		internalFrameInfoTubo.setLocation(x6, y6);
+		frame.getContentPane().add(internalFrameInfoTubo);
+		internalFrameInfoTubo.getContentPane().setLayout(null);
+
+		internalFrameLogin = new JInternalFrame("Login");
+		try {
+			internalFrameLogin.setClosed(true);
+		} catch (PropertyVetoException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+		internalFrameLogin.setSize(493, 300);
+		int x1 = (int) ((frame.getWidth() - internalFrameLogin.getWidth())*0.4);
+		int y1 = (int) ((frame.getHeight() - internalFrameLogin.getHeight())*0.4);
+		internalFrameLogin.setLocation(x1, y1);
+		frame.getContentPane().add(internalFrameLogin);
+		internalFrameLogin.getContentPane().setLayout(null);
+		internalFrameLogin.setVisible(true);
+
+		internalFrameClientes = new JInternalFrame("Nuevo Cliente");
+		try {
+			internalFrameClientes.setClosed(true);
+		} catch (PropertyVetoException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+		internalFrameClientes.setEnabled(false);
+		internalFrameClientes.setResizable(true);
+		internalFrameClientes.setMaximizable(true);
+		internalFrameClientes.setSize(535, 385);
+		int x2 = (int) ((frame.getWidth() - internalFrameClientes.getWidth())*0.4);
+		int y2 = (int) ((frame.getHeight() - internalFrameClientes.getHeight())*0.4);
+		internalFrameClientes.setLocation(x2, y2);
+		frame.getContentPane().add(internalFrameClientes);
+		internalFrameClientes.getContentPane().setLayout(null);
+
+		internalFrameNuevoAcond = new JInternalFrame("Nuevo acondicionamiento");
+		try {
+			internalFrameNuevoAcond.setClosed(true);
+		} catch (PropertyVetoException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+		internalFrameNuevoAcond.setSize(450, 450);
+		int x3 = (int) ((frame.getWidth() - internalFrameNuevoAcond.getWidth())*0.4);
+		int y3 = (int) ((frame.getHeight() - internalFrameNuevoAcond.getHeight())*0.4);
+		internalFrameNuevoAcond.setLocation(x3, y3);
+		frame.getContentPane().add(internalFrameNuevoAcond);
+		internalFrameNuevoAcond.getContentPane().setLayout(null);
+
+		internalFrameNuevaSalida = new JInternalFrame("Nueva Salida");
+		try {
+			internalFrameNuevaSalida.setClosed(true);
+		} catch (PropertyVetoException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+		internalFrameNuevaSalida.setResizable(true);
+		internalFrameNuevaSalida.setSize(623, 450);
+		int x4 = (int) ((frame.getWidth() - internalFrameNuevaSalida.getWidth())*0.4);
+		int y4 = (int) ((frame.getHeight() - internalFrameNuevaSalida.getHeight())*0.4);
+		internalFrameNuevaSalida.setLocation(x4, y4);
+		frame.getContentPane().add(internalFrameNuevaSalida);
+		internalFrameNuevaSalida.getContentPane().setLayout(null);
+
+		InternalFrameNuevaEntrada = new JInternalFrame("Nueva entrada");
+		try {
+			InternalFrameNuevaEntrada.setClosed(true);
+		} catch (PropertyVetoException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+		InternalFrameNuevaEntrada.setEnabled(false);
+		InternalFrameNuevaEntrada.setResizable(true);
+		InternalFrameNuevaEntrada.setMaximizable(true);
+		InternalFrameNuevaEntrada.setSize(535, 385);
+		int x5 = (int) ((frame.getWidth() - InternalFrameNuevaEntrada.getWidth())*0.4);
+		int y5 = (int) ((frame.getHeight() - InternalFrameNuevaEntrada.getHeight())*0.4);
+		internalFrameNuevaSalida.setLocation(x5, y5);
+		frame.getContentPane().add(InternalFrameNuevaEntrada);
+		InternalFrameNuevaEntrada.getContentPane().setLayout(null);
+
+		
+
+
+		// --------------------------- components -------------------------------------------
+		
+		
 		frame.getContentPane().add(internalFrameListarTubos);
 		internalFrameListarTubos.getContentPane().setLayout(null);
 		
 		scrollPane_1 = new JScrollPane();
-		scrollPane_1.setBounds(6, 216, 627, 311);
+		scrollPane_1.setBounds(6, 216, 564, 311);
 		internalFrameListarTubos.getContentPane().add(scrollPane_1);
 		
 		
@@ -737,49 +658,57 @@ private JLabel lblTipo;
 		tableListaTubos = new JTable();
 		scrollPane_1.setViewportView(tableListaTubos);
 		
+		chckbxListarEnStock = new JCheckBox("En stock");
+		chckbxListarEnStock.setBounds(408, 21, 128, 23);
+		internalFrameListarTubos.getContentPane().add(chckbxListarEnStock);
+		
 		comboBoxListarEstado = new JComboBox();
-		comboBoxListarEstado.setModel(new DefaultComboBoxModel(new String[] {"Todos", "Si", "No"}));
-		comboBoxListarEstado.setBounds(463, 48, 143, 27);
+		comboBoxListarEstado.setModel(new DefaultComboBoxModel(new String[] {"Todos", "Llenos", "A llenar"}));
+		comboBoxListarEstado.setBounds(363, 75, 143, 27);
 		internalFrameListarTubos.getContentPane().add(comboBoxListarEstado);
+		
+		chckbxListarPruebaHidrulica = new JCheckBox("Prueba hidráulica");
+		chckbxListarPruebaHidrulica.setBounds(198, 21, 176, 23);
+		internalFrameListarTubos.getContentPane().add(chckbxListarPruebaHidrulica);
 		
 		comboBoxListarPropietario = new JComboBox();
 		comboBoxListarPropietario.setModel(new DefaultComboBoxModel(new String[] {"Todos", "Z", "P"}));
-		comboBoxListarPropietario.setBounds(270, 48, 135, 27);
+		comboBoxListarPropietario.setBounds(198, 75, 135, 27);
 		internalFrameListarTubos.getContentPane().add(comboBoxListarPropietario);
 		
 		comboBoxListarCiudad = new JComboBox();
 		comboBoxListarCiudad.setEnabled(false);
 		comboBoxListarCiudad.setModel(new DefaultComboBoxModel(new String[] {"Todas", "Tandil", "Olavarría", "Colectivo"}));
-		comboBoxListarCiudad.setBounds(29, 74, 160, 27);
+		comboBoxListarCiudad.setBounds(6, 111, 160, 27);
 		internalFrameListarTubos.getContentPane().add(comboBoxListarCiudad);
 		
-		JLabel lblEstado = new JLabel("Llenado");
-		lblEstado.setBounds(471, 20, 61, 16);
+		JLabel lblEstado = new JLabel("Estado");
+		lblEstado.setBounds(381, 56, 61, 16);
 		internalFrameListarTubos.getContentPane().add(lblEstado);
 		
 		JLabel lblPropietario = new JLabel("Propietario");
-		lblPropietario.setBounds(282, 20, 84, 16);
+		lblPropietario.setBounds(198, 56, 84, 16);
 		internalFrameListarTubos.getContentPane().add(lblPropietario);
 		
 		JLabel lblUbicacin_1 = new JLabel("Ubicación");
-		lblUbicacin_1.setBounds(38, 20, 109, 16);
+		lblUbicacin_1.setBounds(16, 56, 109, 16);
 		internalFrameListarTubos.getContentPane().add(lblUbicacin_1);
 		
 		textFieldListarTamano = new JTextField();
-		textFieldListarTamano.setBounds(180, 118, 130, 26);
+		textFieldListarTamano.setBounds(266, 150, 130, 26);
 		internalFrameListarTubos.getContentPane().add(textFieldListarTamano);
 		textFieldListarTamano.setColumns(10);
 		
 		JLabel lblTamao_1 = new JLabel("Tamaño");
-		lblTamao_1.setBounds(86, 123, 61, 16);
+		lblTamao_1.setBounds(175, 155, 61, 16);
 		internalFrameListarTubos.getContentPane().add(lblTamao_1);
 		
 		JLabel lblGas_1 = new JLabel("Gas");
-		lblGas_1.setBounds(372, 123, 61, 16);
+		lblGas_1.setBounds(175, 183, 61, 16);
 		internalFrameListarTubos.getContentPane().add(lblGas_1);
 		
 		textFieldListarGas = new JTextField();
-		textFieldListarGas.setBounds(424, 118, 130, 26);
+		textFieldListarGas.setBounds(266, 178, 130, 26);
 		internalFrameListarTubos.getContentPane().add(textFieldListarGas);
 		textFieldListarGas.setColumns(10);
 		
@@ -796,10 +725,14 @@ private JLabel lblTipo;
 				String stock = "";
 				List<String> list = new ArrayList<String>();
 				
+				if (chckbxListarPruebaHidrulica.isSelected()){
+				//	ph = 
+				}
+				
 				if (!comboBoxListarEstado.getSelectedItem().equals("Todos")){
 					switch (comboBoxListarEstado.getSelectedItem().toString()){
-					case "Si" : lleno = "lleno= 'si'"; break;
-					case "No" : lleno = "lleno = 'no'"; break;
+					case "Llenos" : lleno = "lleno= 'si'"; break;
+					case "A llenar" : lleno = "lleno = 'no'"; break;
 				}
 					list.add(lleno);
 				}
@@ -874,7 +807,7 @@ private JLabel lblTipo;
 				}
 			}
 		});
-		buttonListarBuscar.setBounds(249, 175, 117, 29);
+		buttonListarBuscar.setBounds(453, 175, 117, 29);
 		internalFrameListarTubos.getContentPane().add(buttonListarBuscar);
 		
 		comboBoxListarUbicacion = new JComboBox();
@@ -886,7 +819,7 @@ private JLabel lblTipo;
 			}
 		});
 		comboBoxListarUbicacion.setModel(new DefaultComboBoxModel(new String[] {"Todas", "Stock", "Prueba hidráulica", "Cliente"}));
-		comboBoxListarUbicacion.setBounds(29, 48, 160, 27);
+		comboBoxListarUbicacion.setBounds(6, 75, 160, 27);
 		internalFrameListarTubos.getContentPane().add(comboBoxListarUbicacion);
 		
 		tablaMovTubos = new JTable();
@@ -911,98 +844,6 @@ private JLabel lblTipo;
 			}
 
 		});
-
-		internalFrameInfoTubo = new JInternalFrame("Ver información de tubo");
-		try {
-			internalFrameInfoTubo.setClosed(true);
-		} catch (PropertyVetoException e3) {
-			// TODO Auto-generated catch block
-			e3.printStackTrace();
-		}
-		internalFrameInfoTubo.setClosable(true);
-		internalFrameInfoTubo.setResizable(true);
-		internalFrameInfoTubo.setMaximizable(true);
-		internalFrameInfoTubo.setBounds(10, 6, 623, 623);
-		frame.getContentPane().add(internalFrameInfoTubo);
-		internalFrameInfoTubo.getContentPane().setLayout(null);
-
-		internalFrameLogin = new JInternalFrame("Login");
-		try {
-			internalFrameLogin.setClosed(true);
-		} catch (PropertyVetoException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-
-		internalFrameLogin.setBounds(10, 6, 493, 300);
-		frame.getContentPane().add(internalFrameLogin);
-		internalFrameLogin.getContentPane().setLayout(null);
-		internalFrameLogin.setVisible(true);
-
-		internalFrameClientes = new JInternalFrame("Nuevo Cliente");
-		internalFrameClientes.setClosable(true);
-		try {
-			internalFrameClientes.setClosed(true);
-		} catch (PropertyVetoException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-		internalFrameClientes.setEnabled(false);
-		internalFrameClientes.setResizable(true);
-		internalFrameClientes.setMaximizable(true);
-		internalFrameClientes.setBounds(0, 6, 535, 385);
-		frame.getContentPane().add(internalFrameClientes);
-		internalFrameClientes.getContentPane().setLayout(null);
-
-		
-
-		internalFrameNuevaSalida = new JInternalFrame("Nueva Salida");
-		internalFrameNuevaSalida.setClosable(true);
-		try {
-			internalFrameNuevaSalida.setClosed(true);
-		} catch (PropertyVetoException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-		internalFrameNuevaSalida.setResizable(true);
-		internalFrameNuevaSalida.setBounds(10, 6, 623, 450);
-		frame.getContentPane().add(internalFrameNuevaSalida);
-		internalFrameNuevaSalida.getContentPane().setLayout(null);
-
-		InternalFrameNuevaEntrada = new JInternalFrame("Nueva entrada");
-		InternalFrameNuevaEntrada.setClosable(true);
-		try {
-			InternalFrameNuevaEntrada.setClosed(true);
-		} catch (PropertyVetoException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-		InternalFrameNuevaEntrada.setEnabled(false);
-		InternalFrameNuevaEntrada.setResizable(true);
-		InternalFrameNuevaEntrada.setMaximizable(true);
-		InternalFrameNuevaEntrada.setBounds(0, 6, 535, 385);
-		frame.getContentPane().add(InternalFrameNuevaEntrada);
-		InternalFrameNuevaEntrada.getContentPane().setLayout(null);
-
-		
-
-		internalFrameNuevoTubo = new JInternalFrame("Nuevo/modificar tubo");
-		internalFrameNuevoTubo.setClosable(true);
-		try {
-			internalFrameNuevoTubo.setClosed(true);
-		} catch (PropertyVetoException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-		internalFrameNuevoTubo.setMaximizable(true);
-		internalFrameNuevoTubo.setResizable(true);
-		internalFrameNuevoTubo.setEnabled(false);
-		internalFrameNuevoTubo.setBounds(10, 6, 663, 282);
-		frame.getContentPane().add(internalFrameNuevoTubo);
-		internalFrameNuevoTubo.getContentPane().setLayout(null);
-
-
-		// --------------------------- components -------------------------------------------
 
 		textFieldUsuario = new JTextField();
 		textFieldUsuario.setBounds(225, 65, 215, 26);
@@ -1090,14 +931,14 @@ private JLabel lblTipo;
 		btnAceptar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				try {
-					String query = "INSERT INTO acondicionamientos (id_acond, fecha, nro_tubo, tipo, observaciones) VALUES (?,?,?,?,?);";
+					String query = "INSERT INTO acondicionamientos (id_acond, fecha, nro_tubo, tipo) VALUES (?,?,?,?);";
 					PreparedStatement pst = connection.prepareStatement(query);
 					int row = getRow("acondicionamientos") + 1;
 					pst.setString(1, String.valueOf(row) );
 					pst.setString(2, textFieldAcondFecha.getText());
 					pst.setString(3, textFieldAcondTubo.getText());
 					pst.setString(4, comboBoxAcond.getSelectedItem().toString());
-					pst.setString(5, textPaneAcondObservaciones.getText());
+
 
 					pst.execute();
 					pst.close();
@@ -1124,16 +965,8 @@ private JLabel lblTipo;
 				internalFrameNuevoAcond.setVisible(false);
 			}
 		});
-		btnAceptar.setBounds(199, 246, 117, 29);
+		btnAceptar.setBounds(45, 157, 117, 29);
 		internalFrameNuevoAcond.getContentPane().add(btnAceptar);
-		
-		textPaneAcondObservaciones = new JTextPane();
-		textPaneAcondObservaciones.setBounds(199, 146, 130, 55);
-		internalFrameNuevoAcond.getContentPane().add(textPaneAcondObservaciones);
-		
-		JLabel lblObservaciones_2 = new JLabel("Observaciones");
-		lblObservaciones_2.setBounds(21, 168, 99, 16);
-		internalFrameNuevoAcond.getContentPane().add(lblObservaciones_2);
 
 
 
@@ -1579,7 +1412,7 @@ private JLabel lblTipo;
 		textFieldGas.setColumns(10);
 
 		JLabel lblNewLabel_2 = new JLabel("Tamaño");
-		lblNewLabel_2.setBounds(28, 65, 61, 16);
+		lblNewLabel_2.setBounds(17, 65, 61, 16);
 		internalFrameNuevoTubo.getContentPane().add(lblNewLabel_2);
 
 		textFieldTamano = new JTextField();
@@ -1597,7 +1430,7 @@ private JLabel lblTipo;
 		textFieldPropietario.setColumns(10);
 
 		JLabel lblNewLabel_4 = new JLabel("Ubicación");
-		lblNewLabel_4.setBounds(28, 105, 109, 16);
+		lblNewLabel_4.setBounds(17, 105, 109, 16);
 		internalFrameNuevoTubo.getContentPane().add(lblNewLabel_4);
 
 		comboBoxNuevoTubo = new JComboBox();
