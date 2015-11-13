@@ -27,6 +27,7 @@ import java.awt.event.ActionEvent;
 
 import java.sql.*;
 import java.util.Timer;
+import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -42,6 +43,11 @@ import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.text.DefaultCaret;
+
+import org.jdatepicker.impl.JDatePanelImpl;
+import org.jdatepicker.impl.JDatePickerImpl;
+import org.jdatepicker.impl.SqlDateModel;
+import org.jdatepicker.impl.UtilDateModel;
 
 import java.awt.Color;
 import javax.swing.JComboBox;
@@ -61,10 +67,13 @@ import javax.swing.ImageIcon;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Properties;
 
 import javax.swing.JCheckBox;
 import java.awt.Button;
@@ -88,8 +97,6 @@ public class EmporioApp {
 			}
 		});
 	}
-
-
 
 	/**
 	 * Create the application.
@@ -118,7 +125,7 @@ public class EmporioApp {
 	private JMenuItem mntmNuevaSalida;
 	private JTextField textFieldEntradaFecha;
 	private JTextField textFieldEntradaNroTubo;
-	private JTextField textFieldEntradaCliente;
+	private JComboBox comboBoxEntradaCliente;
 	private JTextField textFieldEntradaComprobante;
 	private JInternalFrame InternalFrameNuevaEntrada;
 	private JTextField textFieldEmpleado;
@@ -184,7 +191,7 @@ public class EmporioApp {
 	private JScrollPane scrollPane_1;
 	private JTextField textFieldListarTamano;
 	private JTextField textFieldListarGas;
-	
+
 	private JInternalFrame internalFrameListarTubos;
 	private JComboBox comboBoxListarEstado;
 	private JComboBox comboBoxListarPropietario;
@@ -194,32 +201,46 @@ public class EmporioApp {
 	private JLabel lblNmeroAlternativo;
 	private JTextField textFieldNroAltern;
 	private JTextPane textPaneAcondObservaciones;
-private JInternalFrame internalFrameVerMov;
-private JLabel lblFecha_2;
-private JTextField textFieldMovFecha;
-private JTextField textFieldMovEmpleado;
-private JLabel lblEmpleado_2;
-private JLabel lblMotivo_1;
-private JComboBox comboBoxMovMotivo;
-private JLabel lblFlete_2;
-private JComboBox comboBoxMovFlete;
-private JLabel lblNroTubo_1;
-private JTextField textFieldMovTubo;
-private JLabel lblCliente_2;
-private JComboBox comboBoxMovCliente;
-private JTable tableMovMov;
-private JScrollPane scrollPane_2;
-private JButton btnBuscar_1;
-private JComboBox comboBoxMovTipo;
-private JLabel lblTipo;
+	private JInternalFrame internalFrameVerMov;
+	private JLabel lblFecha_2;
+	private JTextField textFieldMovFecha;
+	private JTextField textFieldMovEmpleado;
+	private JLabel lblEmpleado_2;
+	private JLabel lblMotivo_1;
+	private JComboBox comboBoxMovMotivo;
+	private JLabel lblFlete_2;
+	private JComboBox comboBoxMovFlete;
+	private JLabel lblNroTubo_1;
+	private JTextField textFieldMovTubo;
+	private JLabel lblCliente_2;
+	private JComboBox comboBoxMovCliente;
+	private JTable tableMovMov;
+	private JScrollPane scrollPane_2;
+	private JButton btnBuscarMov;
+	private JComboBox comboBoxMovTipo;
+	private JLabel lblTipo;
+	private JDatePickerImpl datePickerMov;
+	private JDatePickerImpl datePickerAcond;
+	private JDatePickerImpl datePickerEntrada;
+	private JDatePickerImpl datePickerSalida;
+	private JComboBox comboBoxSalidaCliente;
+	private JInternalFrame internalFrameClientesBuscar;
+	private JComboBox comboBoxCliBusqClientes;
+	private JLabel lblCliente_3;
+	private JLabel lblUbicacin_2;
+	private JComboBox comboBoxCliBusqUbicacion;
+	private JLabel lblGrupo_1;
+	private JComboBox comboBoxCliBusqGrupo;
+	private JTable tableCliBusq;
+	private JButton btnBuscarCliBusq;
+	private JScrollPane scrollPane_3;
 	
-
 	public EmporioApp() {
 		initialize();
 
 	}
 
-	private void runNotification(){
+	private void runNotification() {
 		Calendar today = Calendar.getInstance();
 		today.set(Calendar.HOUR_OF_DAY, 17);
 		today.set(Calendar.MINUTE, 49);
@@ -227,11 +248,13 @@ private JLabel lblTipo;
 
 		// every night at 2am you run your task
 		Timer timer = new Timer();
-		timer.schedule(new NotificationTask(connection), today.getTime(), TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS)); // 60*60*24*100 = 8640000ms
+		timer.schedule(new NotificationTask(connection), today.getTime(),
+				TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS)); // 60*60*24*100
+																	// =
+																	// 8640000ms
 	}
 
-
-	private void clearDataNuevoTubo(){
+	private void clearDataNuevoTubo() {
 		textFieldNroTubo.setText("");
 		textFieldGas.setText("");
 		textFieldTamano.setText("");
@@ -239,23 +262,21 @@ private JLabel lblTipo;
 
 	}
 
-	private void clearDataNuevEntrada(){
-		textFieldEntradaFecha.setText("");
+	private void clearDataNuevEntrada() {
 		textFieldEntradaComprobante.setText("");
 		textFieldEmpleado.setText("");
 		textFieldMonto.setText("");
 		textAreaObservaciones.setText("");
 		textFieldEntradaNroTubo.setText("");
-		textFieldEntradaCliente.setText("");
 
 	}
 
-	private void updateTableEntradas(){
+	private void updateTableEntradas() {
 		try {
 			String query = "select * from entradas;";
 			PreparedStatement pst = connection.prepareStatement(query);
 			ResultSet rs = pst.executeQuery();
-			if(rs.next())
+			if (rs.next())
 				tablaMovTubos.setModel(DbUtils.resultSetToTableModel(rs));
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
@@ -263,7 +284,7 @@ private JLabel lblTipo;
 		}
 	}
 
-	private void updateTableTubos(){
+	private void updateTableTubos() {
 		try {
 			String query = "select * from tubos;";
 			PreparedStatement pst = connection.prepareStatement(query);
@@ -275,32 +296,29 @@ private JLabel lblTipo;
 		}
 	}
 
+	private void fillComboBoxTubos() {
 
-	private void fillComboBoxTubos(){
-
-		
 	}
 
-	private boolean isTuboAdded(String tubo){
+	private boolean isTuboAdded(String tubo) {
 		boolean isThere = false;
 		try {
 			String query = "SELECT * FROM tubos;";
 			PreparedStatement pst;
 			pst = connection.prepareStatement(query);
 			ResultSet rs = pst.executeQuery();
-			while(rs.next() && !isThere)
+			while (rs.next() && !isThere)
 				if (rs.getString(1).equals(tubo))
 					isThere = true;
 
-		}
-		catch (SQLException e) {
+		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return isThere;
 	}
 
-	private boolean isClienteInDB(String cliente){
+	private boolean isClienteInDB(String cliente) {
 		boolean isThere = false;
 		String cliente1 = cliente.toLowerCase();
 		try {
@@ -308,19 +326,18 @@ private JLabel lblTipo;
 			PreparedStatement pst;
 			pst = connection.prepareStatement(query);
 			ResultSet rs = pst.executeQuery();
-			while(rs.next() && !isThere)
+			while (rs.next() && !isThere)
 				if (rs.getString(2).toLowerCase().equals(cliente1))
 					isThere = true;
 
-		}
-		catch (SQLException e) {
+		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return isThere;
 	}
 
-	private int getRow(String table){
+	private int getRow(String table) {
 		String query = "select * from " + table + ";";
 		PreparedStatement pst;
 		try {
@@ -328,9 +345,9 @@ private JLabel lblTipo;
 
 			ResultSet rs = pst.executeQuery();
 			int i = 0;
-			while(rs.next())
+			while (rs.next())
 				i++;
-			//rs.last();
+			// rs.last();
 			return i;
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -339,8 +356,31 @@ private JLabel lblTipo;
 		return 0;
 
 	}
+	
+	private void getClientes(JComboBox combo){
+		String query = "select id_cliente, nombre_y_apellido from clientes;";
+		try {
+			PreparedStatement pst = connection.prepareStatement(query);
 
-
+			ResultSet rs = pst.executeQuery();
+			List<String> list = new Vector<String>();
+			while (rs.next())
+				list.add(rs.getString(2) + ", " + rs.getString(1));
+				//combo.addItem(rs.getString(2) + ", " + rs.getString(1));
+			Collections.sort(list);
+			int i=0;
+			while(i < list.size()){
+				combo.addItem(list.get(i));
+				i++;
+			}
+			rs.close();
+		} catch (SQLException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
+	
+	
 
 	/**
 	 * Initialize the contents of the frame.
@@ -355,13 +395,10 @@ private JLabel lblTipo;
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 
-
-
 		frame.setVisible(true);
-		
 
-
-		//------------------------------------Menu items------------------------------------
+		// ------------------------------------Menu
+		// items------------------------------------
 
 		menuBar = new JMenuBar();
 		menuBar.setEnabled(false);
@@ -386,7 +423,7 @@ private JLabel lblTipo;
 		});
 
 		JMenuItem mntmNuevo = new JMenuItem("Nuevo/Modificar tubo");
-		
+
 		mntmNuevo.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				try {
@@ -397,7 +434,7 @@ private JLabel lblTipo;
 				}
 				internalFrameNuevoTubo.setVisible(true);
 				internalFrameNuevoTubo.toFront();
-					
+
 			}
 		});
 		mnTubos.add(mntmNuevo);
@@ -408,6 +445,7 @@ private JLabel lblTipo;
 		mntmNuevaEntrada = new JMenuItem("Nueva entrada");
 		mntmNuevaEntrada.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				
 				try {
 					InternalFrameNuevaEntrada.setClosed(false);
 				} catch (PropertyVetoException e1) {
@@ -423,6 +461,7 @@ private JLabel lblTipo;
 		mntmNuevaSalida = new JMenuItem("Nueva salida");
 		mntmNuevaSalida.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				
 				try {
 					internalFrameNuevaSalida.setClosed(false);
 				} catch (PropertyVetoException e1) {
@@ -438,6 +477,7 @@ private JLabel lblTipo;
 		mntmVerMovimientos = new JMenuItem("Ver movimientos");
 		mntmVerMovimientos.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				
 				internalFrameVerMov.setVisible(true);
 				internalFrameVerMov.toFront();
 			}
@@ -458,24 +498,24 @@ private JLabel lblTipo;
 			}
 		});
 		mnTubos.add(mntmNuevoAcondicionamiento);
-				
-				JSeparator separator = new JSeparator();
-				mnTubos.add(separator);
-		
-				JMenuItem mntmListar = new JMenuItem("Ver tubos");
-				mntmListar.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent e) {
-						try {
-							internalFrameListarTubos.setClosed(false);
-						} catch (PropertyVetoException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
-						internalFrameListarTubos.setVisible(true);
-						internalFrameListarTubos.toFront();
-					}
-				});
-				mnTubos.add(mntmListar);
+
+		JSeparator separator = new JSeparator();
+		mnTubos.add(separator);
+
+		JMenuItem mntmListar = new JMenuItem("Ver tubos");
+		mntmListar.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					internalFrameListarTubos.setClosed(false);
+				} catch (PropertyVetoException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				internalFrameListarTubos.setVisible(true);
+				internalFrameListarTubos.toFront();
+			}
+		});
+		mnTubos.add(mntmListar);
 		mnTubos.add(mntmBuscar);
 
 		mnClientes = new JMenu("Clientes");
@@ -489,12 +529,24 @@ private JLabel lblTipo;
 			}
 		});
 		mnClientes.add(mntmNuevo_1);
-				
-				JSeparator separator_1 = new JSeparator();
-				mnClientes.add(separator_1);
-		
-				JMenuItem mntmBuscar_1 = new JMenuItem("Buscar clientes");
-				mnClientes.add(mntmBuscar_1);
+
+		JSeparator separator_1 = new JSeparator();
+		mnClientes.add(separator_1);
+
+		JMenuItem mntmBuscar_1 = new JMenuItem("Buscar clientes");
+		mntmBuscar_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					internalFrameClientesBuscar.setClosed(false);
+				} catch (PropertyVetoException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				internalFrameClientesBuscar.setVisible(true);
+				internalFrameListarTubos.toFront();
+			}
+		});
+		mnClientes.add(mntmBuscar_1);
 
 		mnNotificaciones = new JMenu("Notificaciones");
 		mnNotificaciones.setEnabled(false);
@@ -516,10 +568,10 @@ private JLabel lblTipo;
 		JMenuItem mntmCrearmodificar = new JMenuItem("Crear/modificar");
 		mntmCrearmodificar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (tipoUsuario.equals("admin")){
+				if (tipoUsuario.equals("admin")) {
 					JOptionPane.showMessageDialog(null, "OK!");
-				}
-				else JOptionPane.showMessageDialog(null, "El usuario no posee permisos para realizar esta operación");
+				} else
+					JOptionPane.showMessageDialog(null, "El usuario no posee permisos para realizar esta operación");
 			}
 		});
 		mnUsuarios.add(mntmCrearmodificar);
@@ -527,9 +579,124 @@ private JLabel lblTipo;
 		mntmCambiarContrasea = new JMenuItem("Cambiar Contraseña");
 		mnUsuarios.add(mntmCambiarContrasea);
 
+		// ----------------------------internal frames
+		// definitions--------------------------------------
+		
+		internalFrameClientesBuscar = new JInternalFrame("Buscar clientes");
+		internalFrameClientesBuscar.setClosable(true);
+		try {
+			internalFrameClientesBuscar.setClosed(true);
+		} catch (PropertyVetoException e4) {
+			// TODO Auto-generated catch block
+			e4.printStackTrace();
+		}
+		internalFrameClientesBuscar.setBounds(10, 10, 691, 443);
+		frame.getContentPane().add(internalFrameClientesBuscar);
+		internalFrameClientesBuscar.getContentPane().setLayout(null);
+		
+		comboBoxCliBusqClientes = new JComboBox();
+		comboBoxCliBusqClientes.setModel(new DefaultComboBoxModel(new String[] {"Todos"}));
+		comboBoxCliBusqClientes.setBounds(67, 30, 145, 27);
+		internalFrameClientesBuscar.getContentPane().add(comboBoxCliBusqClientes);
+		getClientes(comboBoxCliBusqClientes);
+		
+		lblCliente_3 = new JLabel("Cliente");
+		lblCliente_3.setBounds(6, 34, 61, 16);
+		internalFrameClientesBuscar.getContentPane().add(lblCliente_3);
+		
+		lblUbicacin_2 = new JLabel("Ubicación");
+		lblUbicacin_2.setBounds(224, 34, 97, 16);
+		internalFrameClientesBuscar.getContentPane().add(lblUbicacin_2);
+		
+		comboBoxCliBusqUbicacion = new JComboBox();
+		comboBoxCliBusqUbicacion.setModel(new DefaultComboBoxModel(new String[] {"Todas", "Tandil", "Olavarría", "Colectivo"}));
+		comboBoxCliBusqUbicacion.setBounds(301, 30, 145, 27);
+		internalFrameClientesBuscar.getContentPane().add(comboBoxCliBusqUbicacion);
+		
+		lblGrupo_1 = new JLabel("Grupo");
+		lblGrupo_1.setBounds(473, 34, 61, 16);
+		internalFrameClientesBuscar.getContentPane().add(lblGrupo_1);
+		
+		comboBoxCliBusqGrupo = new JComboBox();
+		comboBoxCliBusqGrupo.setModel(new DefaultComboBoxModel(new String[] {"Todos", "1", "4"}));
+		comboBoxCliBusqGrupo.setBounds(532, 30, 101, 27);
+		internalFrameClientesBuscar.getContentPane().add(comboBoxCliBusqGrupo);
+		
+		scrollPane_3 = new JScrollPane();
+		scrollPane_3.setBounds(6, 114, 655, 277);
+		internalFrameClientesBuscar.getContentPane().add(scrollPane_3);
+		
+		tableCliBusq = new JTable();
+		scrollPane_3.setViewportView(tableCliBusq);
+		
+		btnBuscarCliBusq = new JButton("Buscar");
+		btnBuscarCliBusq.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String cliente = "";
+				String ubicacion = "";
+				String grupo = "";
+				
+				List<String> list = new ArrayList<String>();
 
-		//----------------------------internal frames definitions--------------------------------------
-	
+				if (!comboBoxCliBusqClientes.getSelectedItem().equals("Todos")) {
+					String str = comboBoxCliBusqClientes.getSelectedItem().toString();
+					cliente = "id_cliente= '" + str.substring(str.indexOf(", ")+2) + "'";
+					list.add(cliente);
+				}
+
+				if (!comboBoxCliBusqUbicacion.getSelectedItem().equals("Todas")) {
+					ubicacion = "ubicacion= '" + comboBoxCliBusqUbicacion.getSelectedItem().toString() + "'";
+					list.add(ubicacion);
+				}
+
+				if (!comboBoxCliBusqGrupo.getSelectedItem().equals("Todos")) {
+					
+					grupo = "grupo_clientes= '" + comboBoxCliBusqGrupo.getSelectedItem().toString() + "'";
+					list.add(grupo);
+				}
+
+				
+
+				String subq = "";
+				String query = "";
+				if (list.size() != 0) {
+					subq = list.get(0);
+					for (int i = 1; i < list.size(); i++)
+						subq = subq + " AND " + list.get(i);
+					query = "SELECT * FROM clientes WHERE " + subq + ";";
+				} else
+					query = "SELECT * FROM clientes;";
+
+				PreparedStatement pst;
+				try {
+					pst = connection.prepareStatement(query);
+
+					ResultSet rs = pst.executeQuery();
+					tableCliBusq.setModel(DbUtils.resultSetToTableModel(rs));
+					// tableListaTubos.set
+					
+					 TableColumnModel tcm = tableCliBusq.getColumnModel();
+					 tcm.getColumn(0).setHeaderValue("Nro CLiente");
+					 tcm.getColumn(1).setHeaderValue("Nombre");
+					 tcm.getColumn(2).setHeaderValue("Dirección");
+					 tcm.getColumn(3).setHeaderValue("Teléfono");
+					 tcm.getColumn(4).setHeaderValue("Cod Postal");
+					 tcm.getColumn(5).setHeaderValue("Ubicación");
+					 tcm.getColumn(6).setHeaderValue("Nro Cuenta");
+					 tcm.getColumn(7).setHeaderValue("Grupo");
+					 
+					pst.close();
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+
+		});
+		btnBuscarCliBusq.setBounds(516, 73, 117, 29);
+		internalFrameClientesBuscar.getContentPane().add(btnBuscarCliBusq);
+		
+
 		internalFrameVerMov = new JInternalFrame("Ver movimientos");
 		internalFrameVerMov.setResizable(true);
 		internalFrameVerMov.setClosable(true);
@@ -539,75 +706,82 @@ private JLabel lblTipo;
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
 		}
-		internalFrameVerMov.setBounds(10, 6, 663, 461);
+		internalFrameVerMov.setBounds(10, 6, 744, 461);
 		frame.getContentPane().add(internalFrameVerMov);
 		internalFrameVerMov.getContentPane().setLayout(null);
-		
+
 		lblFecha_2 = new JLabel("Fecha");
-		lblFecha_2.setBounds(33, 66, 61, 16);
+		lblFecha_2.setBounds(483, 40, 61, 16);
 		internalFrameVerMov.getContentPane().add(lblFecha_2);
-		
-		textFieldMovFecha = new JTextField();
-		textFieldMovFecha.setBounds(107, 61, 130, 26);
-		internalFrameVerMov.getContentPane().add(textFieldMovFecha);
-		textFieldMovFecha.setColumns(10);
-		
+
+		SqlDateModel model = new SqlDateModel();
+		Properties p = new Properties();
+		p.put("text.today", "Today");
+		p.put("text.month", "Month");
+		p.put("text.year", "Year");
+		JDatePanelImpl datePanelMov = new JDatePanelImpl(model, p);
+		datePickerMov = new JDatePickerImpl(datePanelMov, new DateLabelFormatter());
+		datePickerMov.setBounds(529, 30, 185, 26);
+		internalFrameVerMov.getContentPane().add(datePickerMov);
+
 		textFieldMovEmpleado = new JTextField();
 		textFieldMovEmpleado.setBounds(349, 30, 130, 26);
 		internalFrameVerMov.getContentPane().add(textFieldMovEmpleado);
 		textFieldMovEmpleado.setColumns(10);
-		
+
 		lblEmpleado_2 = new JLabel("Empleado");
 		lblEmpleado_2.setBounds(276, 35, 61, 16);
 		internalFrameVerMov.getContentPane().add(lblEmpleado_2);
-		
+
 		lblMotivo_1 = new JLabel("Motivo");
-		lblMotivo_1.setBounds(33, 100, 61, 16);
+		lblMotivo_1.setBounds(34, 66, 61, 16);
 		internalFrameVerMov.getContentPane().add(lblMotivo_1);
-		
+
 		comboBoxMovMotivo = new JComboBox();
-		comboBoxMovMotivo.setModel(new DefaultComboBoxModel(new String[] {"Todos"}));
-		comboBoxMovMotivo.setBounds(107, 96, 130, 27);
+		comboBoxMovMotivo.setModel(new DefaultComboBoxModel(
+				new String[] { "Todos", "Llenado", "Prueba hidráulica", "Cambio de válvula", "Tubo rechazado" }));
+		comboBoxMovMotivo.setBounds(107, 62, 130, 27);
 		internalFrameVerMov.getContentPane().add(comboBoxMovMotivo);
-		
+
 		lblFlete_2 = new JLabel("Flete");
 		lblFlete_2.setBounds(276, 66, 61, 16);
 		internalFrameVerMov.getContentPane().add(lblFlete_2);
-		
+
 		comboBoxMovFlete = new JComboBox();
-		comboBoxMovFlete.setModel(new DefaultComboBoxModel(new String[] {"Todos", "Si", "No"}));
+		comboBoxMovFlete.setModel(new DefaultComboBoxModel(new String[] { "Todos", "Si", "No" }));
 		comboBoxMovFlete.setBounds(349, 62, 130, 27);
 		internalFrameVerMov.getContentPane().add(comboBoxMovFlete);
-		
+
 		lblNroTubo_1 = new JLabel("Nro tubo");
-		lblNroTubo_1.setBounds(33, 140, 61, 16);
+		lblNroTubo_1.setBounds(34, 97, 61, 16);
 		internalFrameVerMov.getContentPane().add(lblNroTubo_1);
-		
+
 		textFieldMovTubo = new JTextField();
-		textFieldMovTubo.setBounds(107, 135, 130, 26);
+		textFieldMovTubo.setBounds(107, 92, 130, 26);
 		internalFrameVerMov.getContentPane().add(textFieldMovTubo);
 		textFieldMovTubo.setColumns(10);
-		
+
 		lblCliente_2 = new JLabel("Cliente");
-		lblCliente_2.setBounds(276, 100, 61, 16);
+		lblCliente_2.setBounds(529, 66, 61, 16);
 		internalFrameVerMov.getContentPane().add(lblCliente_2);
-		
+
 		comboBoxMovCliente = new JComboBox();
-		comboBoxMovCliente.setModel(new DefaultComboBoxModel(new String[] {"Todos"}));
-		comboBoxMovCliente.setBounds(349, 96, 130, 27);
+		comboBoxMovCliente.setModel(new DefaultComboBoxModel(new String[] { "Todos" }));
+		comboBoxMovCliente.setBounds(584, 63, 130, 27);
 		internalFrameVerMov.getContentPane().add(comboBoxMovCliente);
-		
+		getClientes(comboBoxMovCliente);
+
 		scrollPane_2 = new JScrollPane();
-		scrollPane_2.setBounds(6, 165, 627, 244);
+		scrollPane_2.setBounds(6, 155, 708, 254);
 		internalFrameVerMov.getContentPane().add(scrollPane_2);
-		
+
 		tableMovMov = new JTable();
 		scrollPane_2.setViewportView(tableMovMov);
-		
-		btnBuscar_1 = new JButton("Buscar");
-		btnBuscar_1.addActionListener(new ActionListener() {
+
+		btnBuscarMov = new JButton("Buscar");
+		btnBuscarMov.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
+
 				String empleado = "";
 				String fecha = "";
 				String flete = "";
@@ -616,91 +790,89 @@ private JLabel lblTipo;
 				String tubo = "";
 				String tabla = "";
 				List<String> list = new ArrayList<String>();
-				
-				
-				if(!textFieldMovEmpleado.getText().equals("")){
+
+				if (!textFieldMovEmpleado.getText().equals("")) {
 					empleado = "empleado= '" + textFieldMovEmpleado.getText() + "'";
 					list.add(empleado);
 				}
-				
-				if(!textFieldMovFecha.getText().equals("")){
-					fecha = "fecha= '" + textFieldMovFecha.getText() + "'";
+
+				if (!datePickerMov.getModel().getValue().toString().equals("")) {
+					fecha = "fecha= '" + datePickerMov.getModel().getValue().toString() + "'";
 					list.add(fecha);
 				}
-				
-				if(!comboBoxMovFlete.getSelectedItem().equals("Todos")){
-					flete = "flete= '"+ comboBoxMovFlete.getSelectedItem() + "'";
+
+				if (!comboBoxMovFlete.getSelectedItem().equals("Todos")) {
+					flete = "flete= '" + comboBoxMovFlete.getSelectedItem() + "'";
 					list.add(flete);
 				}
-				
-				if (!comboBoxMovMotivo.getSelectedItem().equals("Todos")){
+
+				if (!comboBoxMovMotivo.getSelectedItem().equals("Todos")) {
 					motivo = "motivo= '" + comboBoxMovMotivo.getSelectedItem().toString() + "'";
 					list.add(motivo);
 				}
-				
-				if (!comboBoxMovCliente.getSelectedItem().equals("Todos")){
-					cliente = "cliente= '" + comboBoxMovCliente.getSelectedItem().toString() + "'";
+
+				if (!comboBoxMovCliente.getSelectedItem().equals("Todos")) {
+					String str = comboBoxMovCliente.getSelectedItem().toString();
+					cliente = "cliente= '" + str.substring(str.indexOf(", ")+2) + "'";
 					list.add(cliente);
 				}
-				
-				if(!textFieldMovTubo.getText().equals("")){
+
+				if (!textFieldMovTubo.getText().equals("")) {
 					tubo = "nro_tubo= '" + textFieldMovTubo.getText() + "'";
 					list.add(tubo);
 				}
-				
-				if(comboBoxMovTipo.getSelectedItem().equals("Entrada"))
+
+				if (comboBoxMovTipo.getSelectedItem().equals("Entrada"))
 					tabla = "entradas";
 				else
 					tabla = "salidas";
-				
-				
+
 				String subq = "";
 				String query = "";
-				if (list.size() != 0)
-				{
+				if (list.size() != 0) {
 					subq = list.get(0);
-					for (int i=1; i < list.size(); i++)
+					for (int i = 1; i < list.size(); i++)
 						subq = subq + " AND " + list.get(i);
-					query = "SELECT * FROM " + tabla + " WHERE "+ subq + ";";
-					}
-				else query = "SELECT * FROM " + tabla + ";";
-				
+					query = "SELECT * FROM " + tabla + " WHERE " + subq + ";";
+				} else
+					query = "SELECT * FROM " + tabla + ";";
+
 				PreparedStatement pst;
 				try {
 					pst = connection.prepareStatement(query);
-				
-				ResultSet rs = pst.executeQuery();
-				tableMovMov.setModel(DbUtils.resultSetToTableModel(rs));
-				//tableListaTubos.set
-				/*TableColumnModel tcm = tableListaTubos.getColumnModel();
-				tcm.getColumn(0).setHeaderValue("Nro tubo");
-				tcm.getColumn(1).setHeaderValue("Gas");
-				tcm.getColumn(2).setHeaderValue("Tamaño");
-				tcm.getColumn(3).setHeaderValue("Propietario");
-				tcm.getColumn(4).setHeaderValue("Lleno");
-				tcm.getColumn(5).setHeaderValue("Ubicación");*/
-				pst.close();
+
+					ResultSet rs = pst.executeQuery();
+					tableMovMov.setModel(DbUtils.resultSetToTableModel(rs));
+					// tableListaTubos.set
+					/*
+					 * TableColumnModel tcm = tableListaTubos.getColumnModel();
+					 * tcm.getColumn(0).setHeaderValue("Nro tubo");
+					 * tcm.getColumn(1).setHeaderValue("Gas");
+					 * tcm.getColumn(2).setHeaderValue("Tamaño");
+					 * tcm.getColumn(3).setHeaderValue("Propietario");
+					 * tcm.getColumn(4).setHeaderValue("Lleno");
+					 * tcm.getColumn(5).setHeaderValue("Ubicación");
+					 */
+					pst.close();
 				} catch (SQLException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
-				
 
 		});
-		btnBuscar_1.setBounds(349, 135, 117, 29);
-		internalFrameVerMov.getContentPane().add(btnBuscar_1);
-		
+		btnBuscarMov.setBounds(388, 114, 117, 29);
+		internalFrameVerMov.getContentPane().add(btnBuscarMov);
+
 		comboBoxMovTipo = new JComboBox();
-		comboBoxMovTipo.setModel(new DefaultComboBoxModel(new String[] {"Entrada", "Salida"}));
+		comboBoxMovTipo.setModel(new DefaultComboBoxModel(new String[] { "Entrada", "Salida" }));
 		comboBoxMovTipo.setBounds(107, 31, 130, 27);
 		internalFrameVerMov.getContentPane().add(comboBoxMovTipo);
-		
+
 		lblTipo = new JLabel("Tipo");
 		lblTipo.setBounds(34, 35, 61, 16);
 		internalFrameVerMov.getContentPane().add(lblTipo);
-		
-		
+
 		internalFrameNuevoAcond = new JInternalFrame("Nuevo acondicionamiento");
 		internalFrameNuevoAcond.setResizable(true);
 		internalFrameNuevoAcond.setClosable(true);
@@ -713,7 +885,7 @@ private JLabel lblTipo;
 		internalFrameNuevoAcond.setBounds(10, 6, 450, 340);
 		frame.getContentPane().add(internalFrameNuevoAcond);
 		internalFrameNuevoAcond.getContentPane().setLayout(null);
-		
+
 		internalFrameListarTubos = new JInternalFrame("Buscar tubos");
 		try {
 			internalFrameListarTubos.setClosed(true);
@@ -726,63 +898,63 @@ private JLabel lblTipo;
 		internalFrameListarTubos.setBounds(10, 0, 663, 600);
 		frame.getContentPane().add(internalFrameListarTubos);
 		internalFrameListarTubos.getContentPane().setLayout(null);
-		
+
 		scrollPane_1 = new JScrollPane();
 		scrollPane_1.setBounds(6, 216, 627, 311);
 		internalFrameListarTubos.getContentPane().add(scrollPane_1);
-		
-		
-		String[] columnNames = {"Nro tubo", "Gas", "Tamaño", "Propietario", "Lleno", "Ubicación"};
-        
+
+		String[] columnNames = { "Nro tubo", "Gas", "Tamaño", "Propietario", "Lleno", "Ubicación" };
+
 		tableListaTubos = new JTable();
 		scrollPane_1.setViewportView(tableListaTubos);
-		
+
 		comboBoxListarEstado = new JComboBox();
-		comboBoxListarEstado.setModel(new DefaultComboBoxModel(new String[] {"Todos", "Si", "No"}));
+		comboBoxListarEstado.setModel(new DefaultComboBoxModel(new String[] { "Todos", "Si", "No" }));
 		comboBoxListarEstado.setBounds(463, 48, 143, 27);
 		internalFrameListarTubos.getContentPane().add(comboBoxListarEstado);
-		
+
 		comboBoxListarPropietario = new JComboBox();
-		comboBoxListarPropietario.setModel(new DefaultComboBoxModel(new String[] {"Todos", "Z", "P"}));
+		comboBoxListarPropietario.setModel(new DefaultComboBoxModel(new String[] { "Todos", "Z", "P" }));
 		comboBoxListarPropietario.setBounds(270, 48, 135, 27);
 		internalFrameListarTubos.getContentPane().add(comboBoxListarPropietario);
-		
+
 		comboBoxListarCiudad = new JComboBox();
 		comboBoxListarCiudad.setEnabled(false);
-		comboBoxListarCiudad.setModel(new DefaultComboBoxModel(new String[] {"Todas", "Tandil", "Olavarría", "Colectivo"}));
+		comboBoxListarCiudad
+				.setModel(new DefaultComboBoxModel(new String[] { "Todas", "Tandil", "Olavarría", "Colectivo" }));
 		comboBoxListarCiudad.setBounds(29, 74, 160, 27);
 		internalFrameListarTubos.getContentPane().add(comboBoxListarCiudad);
-		
+
 		JLabel lblEstado = new JLabel("Llenado");
 		lblEstado.setBounds(471, 20, 61, 16);
 		internalFrameListarTubos.getContentPane().add(lblEstado);
-		
+
 		JLabel lblPropietario = new JLabel("Propietario");
 		lblPropietario.setBounds(282, 20, 84, 16);
 		internalFrameListarTubos.getContentPane().add(lblPropietario);
-		
+
 		JLabel lblUbicacin_1 = new JLabel("Ubicación");
 		lblUbicacin_1.setBounds(38, 20, 109, 16);
 		internalFrameListarTubos.getContentPane().add(lblUbicacin_1);
-		
+
 		textFieldListarTamano = new JTextField();
 		textFieldListarTamano.setBounds(180, 118, 130, 26);
 		internalFrameListarTubos.getContentPane().add(textFieldListarTamano);
 		textFieldListarTamano.setColumns(10);
-		
+
 		JLabel lblTamao_1 = new JLabel("Tamaño");
 		lblTamao_1.setBounds(86, 123, 61, 16);
 		internalFrameListarTubos.getContentPane().add(lblTamao_1);
-		
+
 		JLabel lblGas_1 = new JLabel("Gas");
 		lblGas_1.setBounds(372, 123, 61, 16);
 		internalFrameListarTubos.getContentPane().add(lblGas_1);
-		
+
 		textFieldListarGas = new JTextField();
 		textFieldListarGas.setBounds(424, 118, 130, 26);
 		internalFrameListarTubos.getContentPane().add(textFieldListarGas);
 		textFieldListarGas.setColumns(10);
-		
+
 		JButton buttonListarBuscar = new JButton("Buscar");
 		buttonListarBuscar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -795,79 +967,81 @@ private JLabel lblTipo;
 				String ciudad = "";
 				String stock = "";
 				List<String> list = new ArrayList<String>();
-				
-				if (!comboBoxListarEstado.getSelectedItem().equals("Todos")){
-					switch (comboBoxListarEstado.getSelectedItem().toString()){
-					case "Si" : lleno = "lleno= 'si'"; break;
-					case "No" : lleno = "lleno = 'no'"; break;
-				}
+
+				if (!comboBoxListarEstado.getSelectedItem().equals("Todos")) {
+					switch (comboBoxListarEstado.getSelectedItem().toString()) {
+					case "Si":
+						lleno = "lleno= 'si'";
+						break;
+					case "No":
+						lleno = "lleno = 'no'";
+						break;
+					}
 					list.add(lleno);
 				}
-				
-				if (!comboBoxListarPropietario.getSelectedItem().equals("Todos")){
+
+				if (!comboBoxListarPropietario.getSelectedItem().equals("Todos")) {
 					propietario = "propietario= '" + comboBoxListarPropietario.getSelectedItem().toString() + "'";
 					list.add(propietario);
 				}
-				
-				
-				
-				if (!comboBoxListarUbicacion.getSelectedItem().equals("Todas")){
+
+				if (!comboBoxListarUbicacion.getSelectedItem().equals("Todas")) {
 					ubicacion = "ubicacion= '" + comboBoxListarUbicacion.getSelectedItem() + "'";
 
 					list.add(ubicacion);
 					/*
-					if (comboBoxListarUbicacion.getSelectedItem().equals("Stock")){
-						stock = "nro_tubo= (SELECT nro_tubo FROM salidas WHERE fecha_devolucion IS NOT NULL)";
-						list.add(stock);
-						
-					}
-					else if (comboBoxListarUbicacion.getSelectedItem().equals("Cliente")){
-						stock = "nro_tubo= (SELECT nro_tubo FROM salidas WHERE fecha_devolucion IS NOT NULL)";
-						list.add(stock);
-						
-					}*/
-						
-					
+					 * if
+					 * (comboBoxListarUbicacion.getSelectedItem().equals("Stock"
+					 * )){ stock =
+					 * "nro_tubo= (SELECT nro_tubo FROM salidas WHERE fecha_devolucion IS NOT NULL)"
+					 * ; list.add(stock);
+					 * 
+					 * } else if
+					 * (comboBoxListarUbicacion.getSelectedItem().equals(
+					 * "Cliente")){ stock =
+					 * "nro_tubo= (SELECT nro_tubo FROM salidas WHERE fecha_devolucion IS NOT NULL)"
+					 * ; list.add(stock);
+					 * 
+					 * }
+					 */
+
 				}
-				
-				if(!textFieldListarGas.getText().equals("")){
+
+				if (!textFieldListarGas.getText().equals("")) {
 					gas = "tipo_gas= '" + textFieldListarGas.getText() + "'";
 					list.add(gas);
 				}
-				
-				if(!textFieldListarTamano.getText().equals("")){
+
+				if (!textFieldListarTamano.getText().equals("")) {
 					tamano = "tamanio= '" + textFieldListarTamano.getText() + "'";
 					list.add(tamano);
 				}
-					
-				
-				
+
 				String subq = "";
 				String query = "";
-				if (list.size() != 0)
-				{
+				if (list.size() != 0) {
 					subq = list.get(0);
-					for (int i=1; i < list.size(); i++)
+					for (int i = 1; i < list.size(); i++)
 						subq = subq + " AND " + list.get(i);
-					query = "SELECT * FROM tubos WHERE "+ subq + ";";
-					}
-				else query = "SELECT * FROM tubos;";
-				
+					query = "SELECT * FROM tubos WHERE " + subq + ";";
+				} else
+					query = "SELECT * FROM tubos;";
+
 				PreparedStatement pst;
 				try {
 					pst = connection.prepareStatement(query);
-				
-				ResultSet rs = pst.executeQuery();
-				tableListaTubos.setModel(DbUtils.resultSetToTableModel(rs));
-				//tableListaTubos.set
-				TableColumnModel tcm = tableListaTubos.getColumnModel();
-				tcm.getColumn(0).setHeaderValue("Nro tubo");
-				tcm.getColumn(1).setHeaderValue("Gas");
-				tcm.getColumn(2).setHeaderValue("Tamaño");
-				tcm.getColumn(3).setHeaderValue("Propietario");
-				tcm.getColumn(4).setHeaderValue("Lleno");
-				tcm.getColumn(5).setHeaderValue("Ubicación");
-				pst.close();
+
+					ResultSet rs = pst.executeQuery();
+					tableListaTubos.setModel(DbUtils.resultSetToTableModel(rs));
+					// tableListaTubos.set
+					TableColumnModel tcm = tableListaTubos.getColumnModel();
+					tcm.getColumn(0).setHeaderValue("Nro tubo");
+					tcm.getColumn(1).setHeaderValue("Gas");
+					tcm.getColumn(2).setHeaderValue("Tamaño");
+					tcm.getColumn(3).setHeaderValue("Propietario");
+					tcm.getColumn(4).setHeaderValue("Lleno");
+					tcm.getColumn(5).setHeaderValue("Ubicación");
+					pst.close();
 				} catch (SQLException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -876,7 +1050,7 @@ private JLabel lblTipo;
 		});
 		buttonListarBuscar.setBounds(249, 175, 117, 29);
 		internalFrameListarTubos.getContentPane().add(buttonListarBuscar);
-		
+
 		comboBoxListarUbicacion = new JComboBox();
 		comboBoxListarUbicacion.addMouseListener(new MouseAdapter() {
 			@Override
@@ -885,15 +1059,17 @@ private JLabel lblTipo;
 					comboBoxListarCiudad.setEnabled(true);
 			}
 		});
-		comboBoxListarUbicacion.setModel(new DefaultComboBoxModel(new String[] {"Todas", "Stock", "Prueba hidráulica", "Cliente"}));
+		comboBoxListarUbicacion
+				.setModel(new DefaultComboBoxModel(new String[] { "Todas", "Stock", "Prueba hidráulica", "Cliente" }));
 		comboBoxListarUbicacion.setBounds(29, 48, 160, 27);
 		internalFrameListarTubos.getContentPane().add(comboBoxListarUbicacion);
-		
+
 		tablaMovTubos = new JTable();
 		tableListaTubos.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				//String selection = comboBoxTubos.getSelectedItem().toString();
+				// String selection =
+				// comboBoxTubos.getSelectedItem().toString();
 
 				try {
 					int row = tableListaTubos.getSelectedRow();
@@ -903,7 +1079,7 @@ private JLabel lblTipo;
 					internalFrameInfoTubo.toFront();
 					textFieldBuscarNroTubo.setText(nroTubo);
 					btnBuscar.doClick();
-					
+
 				} catch (Exception e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -954,8 +1130,6 @@ private JLabel lblTipo;
 		frame.getContentPane().add(internalFrameClientes);
 		internalFrameClientes.getContentPane().setLayout(null);
 
-		
-
 		internalFrameNuevaSalida = new JInternalFrame("Nueva Salida");
 		internalFrameNuevaSalida.setClosable(true);
 		try {
@@ -984,8 +1158,6 @@ private JLabel lblTipo;
 		frame.getContentPane().add(InternalFrameNuevaEntrada);
 		InternalFrameNuevaEntrada.getContentPane().setLayout(null);
 
-		
-
 		internalFrameNuevoTubo = new JInternalFrame("Nuevo/modificar tubo");
 		internalFrameNuevoTubo.setClosable(true);
 		try {
@@ -1001,8 +1173,7 @@ private JLabel lblTipo;
 		frame.getContentPane().add(internalFrameNuevoTubo);
 		internalFrameNuevoTubo.getContentPane().setLayout(null);
 
-
-		// --------------------------- components -------------------------------------------
+		// --------------------------- components ---------------------------------
 
 		textFieldUsuario = new JTextField();
 		textFieldUsuario.setBounds(225, 65, 215, 26);
@@ -1028,23 +1199,23 @@ private JLabel lblTipo;
 				String user = textFieldUsuario.getText();
 				String pass = textFieldContrasena.getText();
 				try {
-				LoginWorker loginWorker = new LoginWorker(connection, user, pass);
-				loginWorker.execute();
-				Boolean ok = loginWorker.get();
-				
-				if (!ok)
-					JOptionPane.showMessageDialog(null, "El usuario y/o contraseña son incorrectos, por favor intenta nuevamente"); 
-				else
-				{
-					internalFrameLogin.dispose();
-					tipoUsuario = loginWorker.getTipo();
-					usuario = loginWorker.getUsuario();
-					menuBar.setEnabled(true);
-					mnClientes.setEnabled(true);
-					mnNotificaciones.setEnabled(true);
-					mnTubos.setEnabled(true);
-					mnUsuarios.setEnabled(true);
-				}
+					LoginWorker loginWorker = new LoginWorker(connection, user, pass);
+					loginWorker.execute();
+					Boolean ok = loginWorker.get();
+
+					if (!ok)
+						JOptionPane.showMessageDialog(null,
+								"El usuario y/o contraseña son incorrectos, por favor intenta nuevamente");
+					else {
+						internalFrameLogin.dispose();
+						tipoUsuario = loginWorker.getTipo();
+						usuario = loginWorker.getUsuario();
+						menuBar.setEnabled(true);
+						mnClientes.setEnabled(true);
+						mnNotificaciones.setEnabled(true);
+						mnTubos.setEnabled(true);
+						mnUsuarios.setEnabled(true);
+					}
 				} catch (InterruptedException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -1057,20 +1228,31 @@ private JLabel lblTipo;
 		btnOk.setBounds(190, 166, 117, 29);
 		internalFrameLogin.getContentPane().add(btnOk);
 
-
-
 		textFieldAcondTubo = new JTextField();
 		textFieldAcondTubo.setBounds(199, 25, 130, 26);
 		internalFrameNuevoAcond.getContentPane().add(textFieldAcondTubo);
 		textFieldAcondTubo.setColumns(10);
 
-		textFieldAcondFecha = new JTextField();
-		textFieldAcondFecha.setBounds(199, 108, 130, 26);
-		internalFrameNuevoAcond.getContentPane().add(textFieldAcondFecha);
-		textFieldAcondFecha.setColumns(10);
+		/*
+		 * textFieldAcondFecha = new JTextField();
+		 * textFieldAcondFecha.setBounds(199, 108, 130, 26);
+		 * internalFrameNuevoAcond.getContentPane().add(textFieldAcondFecha);
+		 * textFieldAcondFecha.setColumns(10);
+		 */
+
+		// SqlDateModel model = new SqlDateModel();
+		/*
+		 * Properties p = new Properties(); p.put("text.today", "Today");
+		 * p.put("text.month", "Month"); p.put("text.year", "Year");
+		 */
+		// JDatePanelImpl datePanelMov = new JDatePanelImpl(model, p);
+		datePickerAcond = new JDatePickerImpl(datePanelMov, new DateLabelFormatter());
+		datePickerAcond.setBounds(199, 108, 130, 26);
+		internalFrameNuevoAcond.getContentPane().add(datePickerAcond);
 
 		comboBoxAcond = new JComboBox();
-		comboBoxAcond.setModel(new DefaultComboBoxModel(new String[] {"Llenado", "Prueba hidráulica", "Cambio de válvula", "Tubo rechazado"}));
+		comboBoxAcond.setModel(new DefaultComboBoxModel(
+				new String[] { "Llenado", "Prueba hidráulica", "Cambio de válvula", "Tubo rechazado" }));
 		comboBoxAcond.setBounds(199, 63, 130, 27);
 		internalFrameNuevoAcond.getContentPane().add(comboBoxAcond);
 
@@ -1093,8 +1275,8 @@ private JLabel lblTipo;
 					String query = "INSERT INTO acondicionamientos (id_acond, fecha, nro_tubo, tipo, observaciones) VALUES (?,?,?,?,?);";
 					PreparedStatement pst = connection.prepareStatement(query);
 					int row = getRow("acondicionamientos") + 1;
-					pst.setString(1, String.valueOf(row) );
-					pst.setString(2, textFieldAcondFecha.getText());
+					pst.setString(1, String.valueOf(row));
+					pst.setString(2, datePickerAcond.getModel().getValue().toString());
 					pst.setString(3, textFieldAcondTubo.getText());
 					pst.setString(4, comboBoxAcond.getSelectedItem().toString());
 					pst.setString(5, textPaneAcondObservaciones.getText());
@@ -1102,15 +1284,17 @@ private JLabel lblTipo;
 					pst.execute();
 					pst.close();
 
-					if (comboBoxAcond.getSelectedItem().toString().toLowerCase().equals("llenado")){
-						String query1 = "UPDATE tubos SET lleno='si' where nro_tubo='"+ textFieldAcondTubo.getText() + "';";
+					if (comboBoxAcond.getSelectedItem().toString().toLowerCase().equals("llenado")) {
+						String query1 = "UPDATE tubos SET lleno='si' where nro_tubo='" + textFieldAcondTubo.getText()
+								+ "';";
 						PreparedStatement pst1 = connection.prepareStatement(query1);
 						pst1.execute();
 						pst1.close();
 					}
-					
-					if (comboBoxAcond.getSelectedItem().toString().toLowerCase().equals("prueba hidráulica")){
-						query = "UPDATE tubos SET lleno='no', ubicacion='ph' where nro_tubo='" + textFieldAcondTubo.getText() + "';";
+
+					if (comboBoxAcond.getSelectedItem().toString().toLowerCase().equals("prueba hidráulica")) {
+						query = "UPDATE tubos SET lleno='no', ubicacion='ph' where nro_tubo='"
+								+ textFieldAcondTubo.getText() + "';";
 						PreparedStatement pst1 = connection.prepareStatement(query);
 						pst1.execute();
 						pst1.close();
@@ -1126,17 +1310,14 @@ private JLabel lblTipo;
 		});
 		btnAceptar.setBounds(199, 246, 117, 29);
 		internalFrameNuevoAcond.getContentPane().add(btnAceptar);
-		
+
 		textPaneAcondObservaciones = new JTextPane();
 		textPaneAcondObservaciones.setBounds(199, 146, 130, 55);
 		internalFrameNuevoAcond.getContentPane().add(textPaneAcondObservaciones);
-		
+
 		JLabel lblObservaciones_2 = new JLabel("Observaciones");
 		lblObservaciones_2.setBounds(21, 168, 99, 16);
 		internalFrameNuevoAcond.getContentPane().add(lblObservaciones_2);
-
-
-
 
 		JLabel lblNroDeTubo = new JLabel("Nro de tubo");
 		lblNroDeTubo.setBounds(23, 31, 109, 16);
@@ -1151,10 +1332,10 @@ private JLabel lblTipo;
 		lblCliente_1.setBounds(23, 62, 61, 16);
 		internalFrameNuevaSalida.getContentPane().add(lblCliente_1);
 
-		textFieldSalidaCliente = new JTextField();
-		textFieldSalidaCliente.setBounds(169, 64, 130, 26);
-		internalFrameNuevaSalida.getContentPane().add(textFieldSalidaCliente);
-		textFieldSalidaCliente.setColumns(10);
+		comboBoxSalidaCliente = new JComboBox();
+		comboBoxSalidaCliente.setBounds(169, 64, 130, 26);
+		internalFrameNuevaSalida.getContentPane().add(comboBoxSalidaCliente);
+		getClientes(comboBoxSalidaCliente);
 
 		JLabel lblNroComprobante_1 = new JLabel("Nro comprobante");
 		lblNroComprobante_1.setBounds(23, 104, 134, 16);
@@ -1169,10 +1350,16 @@ private JLabel lblTipo;
 		lblFecha.setBounds(23, 132, 61, 16);
 		internalFrameNuevaSalida.getContentPane().add(lblFecha);
 
-		textFieldSalidaFecha = new JTextField();
-		textFieldSalidaFecha.setBounds(169, 127, 130, 26);
-		internalFrameNuevaSalida.getContentPane().add(textFieldSalidaFecha);
-		textFieldSalidaFecha.setColumns(10);
+		/*
+		 * textFieldSalidaFecha = new JTextField();
+		 * textFieldSalidaFecha.setBounds(169, 127, 130, 26);
+		 * internalFrameNuevaSalida.getContentPane().add(textFieldSalidaFecha);
+		 * textFieldSalidaFecha.setColumns(10);
+		 */
+
+		datePickerSalida = new JDatePickerImpl(datePanelMov, new DateLabelFormatter());
+		datePickerSalida.setBounds(169, 127, 130, 26);
+		internalFrameNuevaSalida.getContentPane().add(datePickerSalida);
 
 		JLabel lblEmpleado_1 = new JLabel("Empleado");
 		lblEmpleado_1.setBounds(23, 160, 61, 16);
@@ -1188,7 +1375,7 @@ private JLabel lblTipo;
 		internalFrameNuevaSalida.getContentPane().add(lblFlete_1);
 
 		comboBoxSalidaFlete = new JComboBox();
-		comboBoxSalidaFlete.setModel(new DefaultComboBoxModel(new String[] {"Si", "No"}));
+		comboBoxSalidaFlete.setModel(new DefaultComboBoxModel(new String[] { "Si", "No" }));
 		comboBoxSalidaFlete.setBounds(169, 212, 130, 27);
 		internalFrameNuevaSalida.getContentPane().add(comboBoxSalidaFlete);
 
@@ -1225,8 +1412,9 @@ private JLabel lblTipo;
 					String query = "INSERT INTO salidas (id_salida, fecha, nro_comprobante, empleado, flete, monto, observaciones, nro_tubo, cliente) VALUES (?,?,?,?,?,?,?,?,?);";
 					PreparedStatement pst = connection.prepareStatement(query);
 					int row = getRow("salidas") + 1;
-					pst.setString(1, String.valueOf(row) );
-					pst.setString(2, textFieldSalidaFecha.getText());
+					String cliente = comboBoxSalidaCliente.getSelectedItem().toString();
+					pst.setString(1, String.valueOf(row));
+					pst.setString(2, datePickerSalida.getModel().getValue().toString());
 					pst.setString(3, textFieldSalidaComprobante.getText());
 					pst.setString(4, textFieldSalidaEmpleado.getText());
 
@@ -1234,23 +1422,24 @@ private JLabel lblTipo;
 					pst.setString(6, textFieldSalidaMonto.getText());
 					pst.setString(7, textPaneSalidaObservaciones.getText());
 					pst.setString(8, textFieldSalidaNroTubo.getText());
-					pst.setString(9, textFieldSalidaCliente.getText());
+					pst.setString(9, cliente.substring(cliente.indexOf(", ")+2));
 					pst.execute();
 					pst.close();
-					
-					query = "UPDATE tubos SET lleno='no', ubicacion='cliente' where nro_tubo='" + textFieldSalidaNroTubo.getText() + "';";
+
+					query = "UPDATE tubos SET lleno='no', ubicacion='cliente' where nro_tubo='"
+							+ textFieldSalidaNroTubo.getText() + "';";
 					PreparedStatement pst1 = connection.prepareStatement(query);
 					pst1.execute();
 					pst1.close();
-					
+
 				} catch (Exception e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-				//internalFrameNuevoTubo.dispose();
-				//internalFrameNuevoTubo.setVisible(false);
+				// internalFrameNuevoTubo.dispose();
+				// internalFrameNuevoTubo.setVisible(false);
 
-				//clearDataNuevEntrada();
+				// clearDataNuevEntrada();
 				internalFrameNuevaSalida.setVisible(false);
 			}
 		});
@@ -1261,13 +1450,12 @@ private JLabel lblTipo;
 		JButton btnCancelar_2 = new JButton("Cancelar");
 		btnCancelar_2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//internalFrameNuevaSalida.setVisible(false);
+				// internalFrameNuevaSalida.setVisible(false);
 				internalFrameNuevaSalida.dispose();
 			}
 		});
 		btnCancelar_2.setBounds(417, 64, 117, 29);
 		internalFrameNuevaSalida.getContentPane().add(btnCancelar_2);
-
 
 		textFieldClientesNombre = new JTextField();
 		textFieldClientesNombre.setBounds(166, 18, 134, 28);
@@ -1291,7 +1479,7 @@ private JLabel lblTipo;
 		lblClientesCod.setBounds(24, 88, 61, 16);
 		internalFrameClientes.getContentPane().add(lblClientesCod);
 
-		textFieldClientesCod = new JTextField();		
+		textFieldClientesCod = new JTextField();
 		textFieldClientesCod.setBounds(166, 85, 134, 28);
 		internalFrameClientes.getContentPane().add(textFieldClientesCod);
 		textFieldClientesCod.setColumns(10);
@@ -1301,10 +1489,9 @@ private JLabel lblTipo;
 		internalFrameClientes.getContentPane().add(lblClienteUbicacion);
 
 		comboBoxUbicacion = new JComboBox();
-		comboBoxUbicacion.setModel(new DefaultComboBoxModel(new String[] {"Tandil", "Olavarria", "Colectivo"}));
+		comboBoxUbicacion.setModel(new DefaultComboBoxModel(new String[] { "Tandil", "Olavarria", "Colectivo" }));
 		comboBoxUbicacion.setBounds(166, 110, 134, 28);
 		internalFrameClientes.getContentPane().add(comboBoxUbicacion);
-
 
 		JLabel lblTel = new JLabel("Teléfono/Cel");
 		lblTel.setBounds(24, 150, 61, 16);
@@ -1320,7 +1507,7 @@ private JLabel lblTipo;
 		internalFrameClientes.getContentPane().add(lblGrupo);
 
 		comboBoxGrupo = new JComboBox();
-		comboBoxGrupo.setModel(new DefaultComboBoxModel(new String[] {"1", "4"}));
+		comboBoxGrupo.setModel(new DefaultComboBoxModel(new String[] { "1", "4" }));
 		comboBoxGrupo.setBounds(166, 175, 134, 27);
 		internalFrameClientes.getContentPane().add(comboBoxGrupo);
 
@@ -1333,7 +1520,6 @@ private JLabel lblTipo;
 		internalFrameClientes.getContentPane().add(textFieldClientesCuenta);
 		textFieldClientesCuenta.setColumns(10);
 
-
 		JButton btnAgregarCliente = new JButton("");
 		btnAgregarCliente.setIcon(new ImageIcon("/Users/cristianmerlo/Downloads/Ok.png"));
 		btnAgregarCliente.setBounds(166, 266, 117, 29);
@@ -1343,7 +1529,7 @@ private JLabel lblTipo;
 		btnCancelarCliente.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				internalFrameClientes.setVisible(false);
-				//clearDataNuevoTubo();
+				// clearDataNuevoTubo();
 			}
 		});
 		btnCancelarCliente.setBounds(302, 266, 117, 29);
@@ -1351,49 +1537,61 @@ private JLabel lblTipo;
 		btnAgregarCliente.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				String message = "Se va a agregar el siguiente cliente \n Nombre: " + textFieldClientesNombre.getText().toString() + "\n Dirección: " + textFieldClientesDir.getText() 
-				+ "\n Código postal: " + textFieldClientesCod.getText() + "\n Ubicación: " + comboBoxUbicacion.getSelectedItem().toString() + "\n Teléfono: " + textFieldTelefono.getText() 
-				+ "\n Cuenta: " + textFieldClientesCuenta.getText() + "\n Grupo: " + comboBoxGrupo.getSelectedItem().toString();
-				int action = JOptionPane.showConfirmDialog(null, message, "Agregar cliente", JOptionPane.OK_CANCEL_OPTION);
-				if (action == 0)
-				{
-
+				String message = "Se va a agregar el siguiente cliente \n Nombre: "
+						+ textFieldClientesNombre.getText().toString() + "\n Dirección: "
+						+ textFieldClientesDir.getText() + "\n Código postal: " + textFieldClientesCod.getText()
+						+ "\n Ubicación: " + comboBoxUbicacion.getSelectedItem().toString() + "\n Teléfono: "
+						+ textFieldTelefono.getText() + "\n Cuenta: " + textFieldClientesCuenta.getText() + "\n Grupo: "
+						+ comboBoxGrupo.getSelectedItem().toString();
+				int action = JOptionPane.showConfirmDialog(null, message, "Agregar cliente",
+						JOptionPane.OK_CANCEL_OPTION);
+				if (action == 0) {
 
 					try {
 						String query = "INSERT INTO clientes (id_cliente, nombre_y_apellido, direccion, telefono, codigo_postal, ubicacion, id_cuenta, grupo_clientes) VALUES (?,?,?,?,?,?,?,?);";
 						PreparedStatement pst = connection.prepareStatement(query);
 						int row = getRow("clientes") + 1;
-						pst.setString(1, String.valueOf(row) );
+						pst.setString(1, String.valueOf(row));
 						pst.setString(2, textFieldClientesNombre.getText());
 						pst.setString(3, textFieldClientesDir.getText());
 						pst.setString(4, textFieldTelefono.getText());
-						pst.setString(5, textFieldClientesCod.getText());	
+						pst.setString(5, textFieldClientesCod.getText());
 						pst.setString(6, comboBoxUbicacion.getSelectedItem().toString());
-						pst.setString(7, textFieldClientesCuenta.getText()); //checkear que nro de cuenta sea unica
+						pst.setString(7, textFieldClientesCuenta.getText()); // checkear
+																				// que
+																				// nro
+																				// de
+																				// cuenta
+																				// sea
+																				// unica
 						pst.setString(8, comboBoxGrupo.getSelectedItem().toString());
 						pst.execute();
-						pst.close();						
+						pst.close();
 
 					} catch (Exception e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
-					//}
-					//internalFrameNuevoTubo.dispose();
-					//internalFrameNuevoTubo.setVisible(false);
-					//clearDataNuevoTubo();
+					// }
+					// internalFrameNuevoTubo.dispose();
+					// internalFrameNuevoTubo.setVisible(false);
+					// clearDataNuevoTubo();
 					internalFrameClientes.setVisible(false);
-					//updateTableTubos();
+					// updateTableTubos();
 				}
 			}
 		});
 
+		/*
+		 * textFieldEntradaFecha = new JTextField();
+		 * textFieldEntradaFecha.setBounds(166, 82, 134, 28);
+		 * InternalFrameNuevaEntrada.getContentPane().add(textFieldEntradaFecha)
+		 * ; textFieldEntradaFecha.setColumns(10);
+		 */
 
-
-		textFieldEntradaFecha = new JTextField();
-		textFieldEntradaFecha.setBounds(166, 82, 134, 28);
-		InternalFrameNuevaEntrada.getContentPane().add(textFieldEntradaFecha);
-		textFieldEntradaFecha.setColumns(10);
+		datePickerEntrada = new JDatePickerImpl(datePanelMov, new DateLabelFormatter());
+		datePickerEntrada.setBounds(166, 82, 134, 28);
+		InternalFrameNuevaEntrada.getContentPane().add(datePickerEntrada);
 
 		JLabel lblEntradaFecha = new JLabel("Fecha");
 		lblEntradaFecha.setBounds(24, 88, 61, 16);
@@ -1412,10 +1610,11 @@ private JLabel lblTipo;
 		lblCliente.setBounds(24, 52, 61, 16);
 		InternalFrameNuevaEntrada.getContentPane().add(lblCliente);
 
-		textFieldEntradaCliente = new JTextField();
-		textFieldEntradaCliente.setBounds(166, 49, 134, 28);
-		InternalFrameNuevaEntrada.getContentPane().add(textFieldEntradaCliente);
-		textFieldEntradaCliente.setColumns(10);
+		comboBoxEntradaCliente = new JComboBox();
+		comboBoxEntradaCliente.setBounds(166, 49, 134, 28);
+		InternalFrameNuevaEntrada.getContentPane().add(comboBoxEntradaCliente);
+		getClientes(comboBoxEntradaCliente);
+		
 
 		JLabel lblNroComprobante = new JLabel("Nro comprobante");
 		lblNroComprobante.setBounds(24, 116, 125, 16);
@@ -1440,7 +1639,7 @@ private JLabel lblTipo;
 		InternalFrameNuevaEntrada.getContentPane().add(lblMotivo);
 
 		comboBoxMotivo = new JComboBox();
-		comboBoxMotivo.setModel(new DefaultComboBoxModel(new String[] {"Llenado", "Prueba Hidráulica"}));
+		comboBoxMotivo.setModel(new DefaultComboBoxModel(new String[] { "Llenado", "Prueba Hidráulica" }));
 		comboBoxMotivo.setBounds(166, 175, 134, 27);
 		InternalFrameNuevaEntrada.getContentPane().add(comboBoxMotivo);
 
@@ -1449,7 +1648,7 @@ private JLabel lblTipo;
 		InternalFrameNuevaEntrada.getContentPane().add(lblFlete);
 
 		comboBoxFlete = new JComboBox();
-		comboBoxFlete.setModel(new DefaultComboBoxModel(new String[] {"Si", "No"}));
+		comboBoxFlete.setModel(new DefaultComboBoxModel(new String[] { "Si", "No" }));
 		comboBoxFlete.setBounds(166, 203, 134, 27);
 		InternalFrameNuevaEntrada.getContentPane().add(comboBoxFlete);
 
@@ -1475,21 +1674,24 @@ private JLabel lblTipo;
 		btnAgregar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-
-				if (isTuboAdded(textFieldEntradaNroTubo.getText().toString())){
-					String message = "Se va a agregar la siguiente entrada: \n numero de tubo: " + textFieldEntradaNroTubo.getText().toString() + "\n cliente: " + textFieldEntradaCliente.getText() + "\n fecha: " + textFieldEntradaFecha.getText() + "\n empleado: " + textFieldEmpleado.getText() 
-					+ "\n motivo: " + comboBoxMotivo.getSelectedItem().toString() + "\n flete: " + comboBoxFlete.getSelectedItem().toString() + "\n monto total: " + textFieldMonto.getText();
-					int action = JOptionPane.showConfirmDialog(null, message, "Agregar entrada", JOptionPane.OK_CANCEL_OPTION);
-					if (action == 0)
-					{
-
-
+				if (isTuboAdded(textFieldEntradaNroTubo.getText().toString())) {
+					String message = "Se va a agregar la siguiente entrada: \n numero de tubo: "
+							+ textFieldEntradaNroTubo.getText().toString() + "\n cliente: "
+							+ comboBoxEntradaCliente.getSelectedItem().toString() + "\n fecha: "
+							+ datePickerEntrada.getModel().getValue().toString() + "\n empleado: "
+							+ textFieldEmpleado.getText() + "\n motivo: " + comboBoxMotivo.getSelectedItem().toString()
+							+ "\n flete: " + comboBoxFlete.getSelectedItem().toString() + "\n monto total: "
+							+ textFieldMonto.getText();
+					int action = JOptionPane.showConfirmDialog(null, message, "Agregar entrada",
+							JOptionPane.OK_CANCEL_OPTION);
+					if (action == 0) {
 						try {
 							String query = "INSERT INTO entradas (id_entrada, fecha, nro_comprobante, empleado, motivo, flete, monto_total, observaciones, nro_tubo, cliente) VALUES (?,?,?,?,?,?,?,?,?,?);";
 							PreparedStatement pst = connection.prepareStatement(query);
 							int row = getRow("entradas") + 1;
-							pst.setString(1, String.valueOf(row) );
-							pst.setString(2, textFieldEntradaFecha.getText());
+							String cliente = comboBoxEntradaCliente.getSelectedItem().toString();
+							pst.setString(1, String.valueOf(row));
+							pst.setString(2, datePickerEntrada.getModel().getValue().toString());
 							pst.setString(3, textFieldEntradaComprobante.getText());
 							pst.setString(4, textFieldEmpleado.getText());
 							pst.setString(5, comboBoxMotivo.getSelectedItem().toString());
@@ -1497,28 +1699,31 @@ private JLabel lblTipo;
 							pst.setString(7, textFieldMonto.getText());
 							pst.setString(8, textAreaObservaciones.getText());
 							pst.setString(9, textFieldEntradaNroTubo.getText());
-							pst.setString(10, textFieldEntradaCliente.getText());
+							pst.setString(10, cliente.substring(cliente.indexOf(", ")+2));
 							pst.execute();
-							pst.close();			
+							pst.close();
 
 							String llenado = "";
-							if (comboBoxMotivo.getSelectedItem().toString() == "llenado")
-							{
-								String query1 = "UPDATE tubos SET lleno='no' WHERE nro_tubo='" + textFieldEntradaNroTubo.getText() + "';";
+							if (comboBoxMotivo.getSelectedItem().toString() == "llenado") {
+								String query1 = "UPDATE tubos SET lleno='no' WHERE nro_tubo='"
+										+ textFieldEntradaNroTubo.getText() + "';";
 								PreparedStatement pst1;
 
 								pst1 = connection.prepareStatement(query1);
 								pst1.execute();
 								pst1.close();
 							}
-							String query1 = "UPDATE salidas SET fecha_devolucion='" + textFieldEntradaFecha.getText() + "' WHERE nro_tubo='" + textFieldEntradaNroTubo.getText() + "';";
+							String query1 = "UPDATE salidas SET fecha_devolucion='"
+									+ datePickerEntrada.getModel().getValue().toString() + "' WHERE nro_tubo='"
+									+ textFieldEntradaNroTubo.getText() + "';";
 							PreparedStatement pst1;
 
 							pst1 = connection.prepareStatement(query1);
 							pst1.execute();
-							pst1.close();	
-							
-							query = "UPDATE tubos SET lleno='no', ubicacion='stock' where nro_tubo='" + textFieldEntradaNroTubo.getText() + "';";
+							pst1.close();
+
+							query = "UPDATE tubos SET lleno='no', ubicacion='stock' where nro_tubo='"
+									+ textFieldEntradaNroTubo.getText() + "';";
 							PreparedStatement pst2 = connection.prepareStatement(query);
 							pst2.execute();
 							pst2.close();
@@ -1530,18 +1735,18 @@ private JLabel lblTipo;
 
 						clearDataNuevEntrada();
 						InternalFrameNuevaEntrada.setVisible(false);
-						//updateTableTubos();
+						// updateTableTubos();
 					}
-				}else{
-					int actionB = JOptionPane.showConfirmDialog(null, "El número de tubo no existe, desea agregarlo?", "Error", JOptionPane.OK_CANCEL_OPTION);
-					if (actionB==0){
+				} else {
+					int actionB = JOptionPane.showConfirmDialog(null, "El número de tubo no existe, desea agregarlo?",
+							"Error", JOptionPane.OK_CANCEL_OPTION);
+					if (actionB == 0) {
 						InternalFrameNuevaEntrada.setVisible(false);
 						internalFrameNuevoTubo.setVisible(true);
 						textFieldNroTubo.setText(textFieldEntradaNroTubo.getText());
 
 					}
 				}
-
 
 			}
 
@@ -1558,7 +1763,6 @@ private JLabel lblTipo;
 
 		btnCancelar_1.setBounds(327, 64, 117, 29);
 		InternalFrameNuevaEntrada.getContentPane().add(btnCancelar_1);
-
 
 		textFieldNroTubo = new JTextField();
 		textFieldNroTubo.setBounds(145, 19, 134, 28);
@@ -1601,11 +1805,11 @@ private JLabel lblTipo;
 		internalFrameNuevoTubo.getContentPane().add(lblNewLabel_4);
 
 		comboBoxNuevoTubo = new JComboBox();
-		comboBoxNuevoTubo.setModel(new DefaultComboBoxModel(new String[] {"Stock", "Prueba Hidráulica", "Cliente"}));
-		//textFieldUbicacion = new JTextField();
+		comboBoxNuevoTubo.setModel(new DefaultComboBoxModel(new String[] { "Stock", "Prueba Hidráulica", "Cliente" }));
+		// textFieldUbicacion = new JTextField();
 		comboBoxNuevoTubo.setBounds(145, 100, 134, 28);
 		internalFrameNuevoTubo.getContentPane().add(comboBoxNuevoTubo);
-		//comboBoxNuevoTubo.setColumns(10);
+		// comboBoxNuevoTubo.setColumns(10);
 
 		JButton btnAgregarTubo = new JButton("");
 		btnAgregarTubo.setIcon(new ImageIcon("/Users/cristianmerlo/Downloads/Ok.png"));
@@ -1621,11 +1825,11 @@ private JLabel lblTipo;
 		});
 		btnCancelar.setBounds(309, 183, 117, 29);
 		internalFrameNuevoTubo.getContentPane().add(btnCancelar);
-		
+
 		lblNmeroAlternativo = new JLabel("Número alternativo");
 		lblNmeroAlternativo.setBounds(327, 105, 126, 16);
 		internalFrameNuevoTubo.getContentPane().add(lblNmeroAlternativo);
-		
+
 		textFieldNroAltern = new JTextField();
 		textFieldNroAltern.setBounds(452, 100, 134, 26);
 		internalFrameNuevoTubo.getContentPane().add(textFieldNroAltern);
@@ -1633,18 +1837,22 @@ private JLabel lblTipo;
 		btnAgregarTubo.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				if (isTuboAdded(textFieldNroTubo.getText())){
-					String message = "Se va a modificar el siguiente tubo \n numero de tubo: " + textFieldNroTubo.getText().toString() + "\n Desea continuar?";
-					int action = JOptionPane.showConfirmDialog(null, message, "Modificar tubo", JOptionPane.OK_CANCEL_OPTION);
-					if (action == 0)
-					{
+				if (isTuboAdded(textFieldNroTubo.getText())) {
+					String message = "Se va a modificar el siguiente tubo \n numero de tubo: "
+							+ textFieldNroTubo.getText().toString() + "\n Desea continuar?";
+					int action = JOptionPane.showConfirmDialog(null, message, "Modificar tubo",
+							JOptionPane.OK_CANCEL_OPTION);
+					if (action == 0) {
 						try {
-							String query = "UPDATE tubos SET tipo_gas='" + textFieldGas.getText() +"', tamanio='" + textFieldTamano.getText() +"', propietario='" + textFieldPropietario.getText() +"', ubicacion='" 
-									+ comboBoxNuevoTubo.getSelectedItem().toString() + ", nro_altern='" + textFieldNroAltern.getText() + "' WHERE nro_tubo='" + textFieldNroTubo.getText() + "';";
+							String query = "UPDATE tubos SET tipo_gas='" + textFieldGas.getText() + "', tamanio='"
+									+ textFieldTamano.getText() + "', propietario='" + textFieldPropietario.getText()
+									+ "', ubicacion='" + comboBoxNuevoTubo.getSelectedItem().toString()
+									+ ", nro_altern='" + textFieldNroAltern.getText() + "' WHERE nro_tubo='"
+									+ textFieldNroTubo.getText() + "';";
 							PreparedStatement pst = connection.prepareStatement(query);
 
 							pst.execute();
-							pst.close();		
+							pst.close();
 							internalFrameNuevoTubo.dispose();
 
 						} catch (Exception e1) {
@@ -1652,16 +1860,18 @@ private JLabel lblTipo;
 							e1.printStackTrace();
 						}
 					}
-				}
-				else{
+				} else {
 
-					String message = "Se va a agregar el siguiente tubo \n numero de tubo: " + textFieldNroTubo.getText().toString() + "\n gas: " + textFieldGas.getText() + "\n Tamaño: " + textFieldTamano.getText() + "\n propietario: " 
-							+ textFieldPropietario.getText() + "\n ubicacion: " + comboBoxNuevoTubo.getSelectedItem().toString() +"\n nro alternativo: " + textFieldNroAltern.getText() ;
+					String message = "Se va a agregar el siguiente tubo \n numero de tubo: "
+							+ textFieldNroTubo.getText().toString() + "\n gas: " + textFieldGas.getText()
+							+ "\n Tamaño: " + textFieldTamano.getText() + "\n propietario: "
+							+ textFieldPropietario.getText() + "\n ubicacion: "
+							+ comboBoxNuevoTubo.getSelectedItem().toString() + "\n nro alternativo: "
+							+ textFieldNroAltern.getText();
 
-					int action = JOptionPane.showConfirmDialog(null, message, "Agregar tubo", JOptionPane.OK_CANCEL_OPTION);
-					if (action == 0)
-					{
-
+					int action = JOptionPane.showConfirmDialog(null, message, "Agregar tubo",
+							JOptionPane.OK_CANCEL_OPTION);
+					if (action == 0) {
 
 						try {
 							String query = "INSERT INTO tubos (nro_tubo, tipo_gas, tamanio, propietario, ubicacion) VALUES (?,?,?,?,?,?);";
@@ -1673,7 +1883,7 @@ private JLabel lblTipo;
 							pst.setString(5, comboBoxNuevoTubo.getSelectedItem().toString());
 							pst.setString(6, ", nro_altern='" + textFieldNroAltern.getText());
 							pst.execute();
-							pst.close();				
+							pst.close();
 
 						} catch (Exception e1) {
 							// TODO Auto-generated catch block
@@ -1682,11 +1892,10 @@ private JLabel lblTipo;
 					}
 
 					internalFrameNuevoTubo.dispose();
-					//updateTableTubos();
+					// updateTableTubos();
 				}
 			}
 		});
-
 
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBounds(0, 233, 593, 153);
@@ -1694,15 +1903,13 @@ private JLabel lblTipo;
 		scrollPane.setViewportBorder(new LineBorder(new Color(0, 0, 0)));
 
 		tablaMovTubos = new JTable();
-		
-		
+
 		scrollPane.setViewportView(tablaMovTubos);
 
 		btnActualizarTubo = new JButton("Modificar tubo");
 		btnActualizarTubo.setBounds(422, 182, 134, 29);
 		internalFrameInfoTubo.getContentPane().add(btnActualizarTubo);
-		
-		
+
 		btnActualizarTubo.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				textFieldNroTubo.setText(textFieldBuscarNroTubo.getText().toString());
@@ -1713,48 +1920,33 @@ private JLabel lblTipo;
 				internalFrameInfoTubo.setVisible(false);
 				internalFrameNuevoTubo.setVisible(true);
 
-
-				//updateTableEntradas();
+				// updateTableEntradas();
 			}
 		});
 
+		/*
+		 * btnActualizarTubos.addActionListener(new ActionListener() { public
+		 * void actionPerformed(ActionEvent e) { try {
+		 * 
+		 * String selection = new String(); switch
+		 * ((String)comboBoxFilter.getSelectedItem()){ case "Todos": selection =
+		 * null; break; case "Número": selection = "nro_tubo"; break; case
+		 * "Gas": selection = "tipo_gas"; break; case "Tamaño": selection =
+		 * "tamanio"; break; case "Propietario": selection = "propietario";
+		 * break;
+		 * 
+		 * } String query = new String(); PreparedStatement pst; if
+		 * (selection!=null) { query = "select * from tubos where " + selection
+		 * + "=? "; pst = connection.prepareStatement(query); pst.setString(1,
+		 * txtBsqueda.getText()); } else { query = "select * from tubos"; pst =
+		 * connection.prepareStatement(query); } ResultSet rs =
+		 * pst.executeQuery();
+		 * tablaTubos.setModel(DbUtils.resultSetToTableModel(rs)); } catch
+		 * (Exception e1) { // TODO Auto-generated catch block
+		 * e1.printStackTrace(); } } });
+		 */
 
-		/*btnActualizarTubos.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {			
-				try {
-
-					String selection = new String();
-					switch ((String)comboBoxFilter.getSelectedItem()){
-					case "Todos": selection = null; break;
-					case "Número": selection = "nro_tubo"; break;
-					case "Gas": selection = "tipo_gas"; break;
-					case "Tamaño": selection = "tamanio"; break;
-					case "Propietario": selection = "propietario"; break;
-
-					}
-					String query = new String();
-					PreparedStatement pst;
-					if (selection!=null)
-					{
-						query = "select * from tubos where " + selection + "=? ";
-						pst = connection.prepareStatement(query);
-						pst.setString(1, txtBsqueda.getText());
-					}
-					else {
-						query = "select * from tubos";
-						pst = connection.prepareStatement(query);
-					}
-					ResultSet rs = pst.executeQuery();
-					tablaTubos.setModel(DbUtils.resultSetToTableModel(rs));
-				} catch (Exception e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			}
-		});*/
-
-
-		//updateTable();
+		// updateTable();
 		try {
 			String query = "SELECT * FROM tubos;";
 			PreparedStatement pst;
@@ -1814,8 +2006,9 @@ private JLabel lblTipo;
 
 						ResultSet rs = pst.executeQuery();
 						if (!rs.next())
-							JOptionPane.showMessageDialog(null, "El número de tubo seleccionado no existe, intente nuevamente");
-						else{
+							JOptionPane.showMessageDialog(null,
+									"El número de tubo seleccionado no existe, intente nuevamente");
+						else {
 
 							textFieldBuscarGas.setText(rs.getString(2));
 							textFieldBuscarTamano.setText(rs.getString(3));
@@ -1823,14 +2016,18 @@ private JLabel lblTipo;
 							textFieldBuscarUbicacion.setText(rs.getString(6));
 							textFieldBuscarLleno.setText(rs.getString(5));
 
-							//ver tubo en tabla
-							String query1 = "select nro_tubo, cliente, fecha, nro_comprobante, empleado from entradas where nro_tubo=" + textFieldBuscarNroTubo.getText() + " UNION ALL SELECT nro_tubo, cliente, fecha, nro_comprobante, empleado FROM salidas where nro_tubo=" + textFieldBuscarNroTubo.getText() + ";";
+							// ver tubo en tabla
+							String query1 = "select nro_tubo, cliente, fecha, nro_comprobante, empleado from entradas where nro_tubo="
+									+ textFieldBuscarNroTubo.getText()
+									+ " UNION ALL SELECT nro_tubo, cliente, fecha, nro_comprobante, empleado FROM salidas where nro_tubo="
+									+ textFieldBuscarNroTubo.getText() + ";";
 							PreparedStatement pst1 = connection.prepareStatement(query1);
 							ResultSet rs1 = pst1.executeQuery();
-							
-								tablaMovTubos.setModel(DbUtils.resultSetToTableModel(rs1));
 
-							String query2 = "select fecha, tipo from acondicionamientos where nro_tubo=" + textFieldBuscarNroTubo.getText() + ";";
+							tablaMovTubos.setModel(DbUtils.resultSetToTableModel(rs1));
+
+							String query2 = "select fecha, tipo from acondicionamientos where nro_tubo="
+									+ textFieldBuscarNroTubo.getText() + ";";
 							PreparedStatement pst2 = connection.prepareStatement(query2);
 							ResultSet rs2 = pst2.executeQuery();
 							while (rs2.next())
@@ -1841,7 +2038,6 @@ private JLabel lblTipo;
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
-
 
 				}
 			});
@@ -1893,16 +2089,17 @@ private JLabel lblTipo;
 
 			tableAcond = new JTable();
 			scrollPane4.setViewportView(tableAcond);
-			
+
 			JSeparator separator1 = new JSeparator();
 			separator1.setBounds(0, 47, 586, 12);
 			internalFrameInfoTubo.getContentPane().add(separator1);
+			
+			
 
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 
 	}
 }
